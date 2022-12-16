@@ -1,10 +1,10 @@
 package mqtt
 
 import (
-	"common/shutdown"
 	"encoding/json"
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"gitlab.com/pmoscodegrp/common/shutdown"
 	"log"
 	"time"
 )
