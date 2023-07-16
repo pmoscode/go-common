@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"gitlab.com/pmoscodegrp/common/shutdown"
+	"github.com/pmoscode/go-common/shutdown"
 	"log"
 	"time"
 )

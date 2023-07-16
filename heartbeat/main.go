@@ -1,7 +1,7 @@
 package heartbeat
 
 import (
-	"gitlab.com/pmoscodegrp/common/shutdown"
+	"github.com/pmoscode/go-common/shutdown"
 	"time"
 )
 
