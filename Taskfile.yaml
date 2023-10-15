@@ -1,0 +1,7 @@
+version: '3'
+
+tasks:
+  update-deps:
+    desc: Update go dependencies
+    cmds:
+      - go get -u -d ./...
