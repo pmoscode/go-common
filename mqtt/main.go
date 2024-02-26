@@ -38,6 +38,11 @@ type Client struct {
 
 func (c *Client) Connect() error {
 	client := mqtt.NewClient(c.options)
+
+	return c.connect(client)
+}
+
+func (c *Client) connect(client mqtt.Client) error {
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		log.Println("Could not connect to broker: ", token.Error())
 
