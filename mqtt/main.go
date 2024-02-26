@@ -42,6 +42,7 @@ func (c *Client) Connect() error {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("tcp://%s:%d", c.brokerIp, c.port))
 	opts.SetClientID(c.clientId)
+	opts.SetOrderMatters(false)
 
 	client := mqtt.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
