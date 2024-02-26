@@ -32,19 +32,12 @@ func (m Message) ToRawString() string {
 }
 
 type Client struct {
-	brokerIp string
-	port     int
-	clientId string
-	client   *mqtt.Client
+	client  *mqtt.Client
+	options *mqtt.ClientOptions
 }
 
 func (c *Client) Connect() error {
-	opts := mqtt.NewClientOptions()
-	opts.AddBroker(fmt.Sprintf("tcp://%s:%d", c.brokerIp, c.port))
-	opts.SetClientID(c.clientId)
-	opts.SetOrderMatters(false)
-
-	client := mqtt.NewClient(opts)
+	client := mqtt.NewClient(c.options)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		log.Println("Could not connect to broker: ", token.Error())
 
@@ -52,7 +45,7 @@ func (c *Client) Connect() error {
 	}
 
 	c.client = &client
-	log.Println("Mqtt connected to", c.brokerIp)
+	log.Println("Mqtt connected to", c.options.Servers[0])
 
 	return nil
 }
@@ -101,10 +94,19 @@ func (c *Client) LoopForever() {
 	}
 }
 
-func CreateClient(brokerIp string, port int, clientId string) *Client {
-	return &Client{
-		brokerIp: brokerIp,
-		port:     port,
-		clientId: clientId,
+// Deprecated: Use "NewClient" instead of this. Will be removed in future
+func CreateClient(ip string, port int, clientId string) *Client {
+	return NewClient(WithBroker(ip, port), WithClientId(clientId))
+}
+
+func NewClient(options ...Option) *Client {
+	client := &Client{
+		options: mqtt.NewClientOptions(),
 	}
+
+	for _, opt := range options {
+		opt(client.options)
+	}
+
+	return client
 }
