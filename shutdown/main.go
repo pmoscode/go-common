@@ -11,15 +11,17 @@ import (
 var observerSingleton *observerSingle
 var once sync.Once
 
+type ObserverFunc func() error
+
 type Observer interface {
-	AddCommand(fn func() error)
+	AddCommand(fn ObserverFunc)
 }
 
 type observerSingle struct {
-	functions []func() error
+	functions []ObserverFunc
 }
 
-func (o *observerSingle) AddCommand(fn func() error) {
+func (o *observerSingle) AddCommand(fn ObserverFunc) {
 	o.functions = append(o.functions, fn)
 }
 
@@ -57,7 +59,7 @@ func (o *observerSingle) executeCommands() (int, int) {
 func GetObserver() Observer {
 	once.Do(func() {
 		observerSingleton = &observerSingle{
-			functions: make([]func() error, 0),
+			functions: make([]ObserverFunc, 0),
 		}
 		observerSingleton.hookOnShutdown()
 	})
