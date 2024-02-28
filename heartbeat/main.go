@@ -9,6 +9,7 @@ type HeartBeat struct {
 	interval time.Duration
 	callback func()
 	done     chan bool
+	noWait   bool
 }
 
 func (b *HeartBeat) Run() {
@@ -16,6 +17,10 @@ func (b *HeartBeat) Run() {
 }
 
 func (b *HeartBeat) beat() {
+	if b.noWait {
+		b.callback()
+	}
+
 	ticker := time.NewTicker(b.interval)
 	defer ticker.Stop()
 
@@ -40,11 +45,16 @@ func (b *HeartBeat) close() error {
 
 	return nil
 }
-func New(interval time.Duration, callback func()) *HeartBeat {
+func New(interval time.Duration, callback func(), options ...Option) *HeartBeat {
 	heartBeat := &HeartBeat{
 		interval: interval,
 		callback: callback,
 		done:     make(chan bool),
+		noWait:   false,
+	}
+
+	for _, opt := range options {
+		opt(heartBeat)
 	}
 
 	shutdown.GetObserver().AddCommand(heartBeat.stop)
