@@ -12,6 +12,13 @@ type HeartBeat struct {
 	noWait   bool
 }
 
+func (b *HeartBeat) RunForever() {
+	b.Run()
+
+	for {
+		time.Sleep(10 * time.Second)
+	}
+}
 func (b *HeartBeat) Run() {
 	go b.beat()
 }
