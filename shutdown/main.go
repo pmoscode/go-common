@@ -75,14 +75,14 @@ func ExitOnPanic() {
 }
 
 func finalize(title string) {
-	fmt.Println("####### ", title, " #######")
+	fmt.Println("########## ", title)
 	success, failed := observerSingleton.executeCommands()
 	writeSummaryToConsole(success, failed)
-	fmt.Println("#################################")
+	fmt.Println("##########")
 }
 
 func writeSummaryToConsole(success, failed int) {
-	fmt.Println("####### Executed ", success+failed, " shutdown commands")
-	fmt.Println("####### Succeeded: ", success)
-	fmt.Println("####### Failed: ", failed)
+	fmt.Println("######## Executed ", success+failed, " shutdown commands")
+	fmt.Println("######## Succeeded: ", success)
+	fmt.Println("######## Failed: ", failed)
 }
