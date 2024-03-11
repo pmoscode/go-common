@@ -24,11 +24,13 @@ func (b *HeartBeat) Run() {
 }
 
 func (b *HeartBeat) beat() {
+	interval := b.interval
+
 	if b.noWait {
-		b.callback()
+		interval = 0
 	}
 
-	ticker := time.NewTicker(b.interval)
+	ticker := time.NewTimer(interval)
 	defer ticker.Stop()
 
 	for {
