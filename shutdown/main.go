@@ -1,7 +1,7 @@
 package shutdown
 
 import (
-	"log"
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -25,17 +25,12 @@ func (o *observerSingle) AddCommand(fn ObserverFunc) {
 	o.functions = append(o.functions, fn)
 }
 
-func (o *observerSingle) hookOnShutdown() {
+func (o *observerSingle) hookOnSigTerm() {
 	channel := make(chan os.Signal)
 	signal.Notify(channel, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-channel
-		log.Println("Shutting down gracefully...")
-		success, failed := o.executeCommands()
-		log.Println("Executed ", success+failed, " shutdown commands")
-		log.Println("Succeeded: ", success)
-		log.Println("Failed: ", failed)
-		log.Println("...exiting.")
+		finalize("Graceful shutdown hooks")
 		os.Exit(1)
 	}()
 }
@@ -46,7 +41,7 @@ func (o *observerSingle) executeCommands() (int, int) {
 	for _, command := range o.functions {
 		err := command()
 		if err != nil {
-			log.Println(err)
+			fmt.Println(err)
 			failed++
 		} else {
 			success++
@@ -61,8 +56,33 @@ func GetObserver() Observer {
 		observerSingleton = &observerSingle{
 			functions: make([]ObserverFunc, 0),
 		}
-		observerSingleton.hookOnShutdown()
+		observerSingleton.hookOnSigTerm()
 	})
 
 	return observerSingleton
+}
+
+func Exit(exitCode int) {
+	finalize("Shutdown hooks")
+	os.Exit(exitCode)
+}
+
+func ExitOnPanic() {
+	if r := recover(); r != nil {
+		finalize("Panic shutdown hooks")
+		fmt.Println("Printing panic cause: \n", r)
+	}
+}
+
+func finalize(title string) {
+	fmt.Println("####### ", title, " #######")
+	success, failed := observerSingleton.executeCommands()
+	writeSummaryToConsole(success, failed)
+	fmt.Println("#################################")
+}
+
+func writeSummaryToConsole(success, failed int) {
+	fmt.Println("####### Executed ", success+failed, " shutdown commands")
+	fmt.Println("####### Succeeded: ", success)
+	fmt.Println("####### Failed: ", failed)
 }
