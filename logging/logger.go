@@ -2,8 +2,8 @@ package logging
 
 import (
 	"fmt"
+	"github.com/pmoscode/go-common/shutdown"
 	"log"
-	"os"
 )
 
 type Level string
@@ -51,7 +51,7 @@ func (l *Logger) Fatal(err error, format string, params ...any) {
 	if err != nil {
 		log.Println(err)
 	}
-	os.Exit(1)
+	shutdown.Exit(1)
 }
 
 func (l *Logger) Panic(err error, format string, params ...any) {
