@@ -7,10 +7,11 @@ import (
 )
 
 type HeartBeat struct {
-	interval time.Duration
-	callback func()
-	done     chan bool
-	noWait   bool
+	interval   time.Duration
+	callback   func()
+	done       chan bool
+	noWait     bool
+	isFirstRun bool
 }
 
 func (b *HeartBeat) RunForever() {
@@ -25,13 +26,12 @@ func (b *HeartBeat) Run() {
 }
 
 func (b *HeartBeat) beat() {
-	interval := b.interval
-
 	if b.noWait {
-		interval = 0
+		b.isFirstRun = true
+		b.callback()
 	}
 
-	ticker := time.NewTimer(interval)
+	ticker := time.NewTicker(b.interval)
 	defer ticker.Stop()
 
 	for {
@@ -39,9 +39,8 @@ func (b *HeartBeat) beat() {
 		case <-b.done:
 			return
 		case <-ticker.C:
-			if interval == 0 {
-				interval = b.interval
-				ticker.Reset(interval)
+			if b.isFirstRun {
+				b.isFirstRun = false
 			}
 			b.callback()
 		}
@@ -49,7 +48,9 @@ func (b *HeartBeat) beat() {
 }
 
 func (b *HeartBeat) stop() error {
-	b.done <- true
+	if !b.isFirstRun {
+		b.done <- true
+	}
 
 	return nil
 }
@@ -67,10 +68,11 @@ func New(interval time.Duration, callback func(), options ...Option) *HeartBeat 
 	}
 
 	heartBeat := &HeartBeat{
-		interval: interval,
-		callback: callback,
-		done:     make(chan bool),
-		noWait:   false,
+		interval:   interval,
+		callback:   callback,
+		done:       make(chan bool),
+		noWait:     false,
+		isFirstRun: false,
 	}
 
 	for _, opt := range options {
