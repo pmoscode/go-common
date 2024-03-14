@@ -1,6 +1,7 @@
 package heartbeat
 
 import (
+	"fmt"
 	"github.com/pmoscode/go-common/shutdown"
 	"time"
 )
@@ -38,6 +39,10 @@ func (b *HeartBeat) beat() {
 		case <-b.done:
 			return
 		case <-ticker.C:
+			if interval == 0 {
+				interval = b.interval
+				ticker.Reset(interval)
+			}
 			b.callback()
 		}
 	}
@@ -55,6 +60,12 @@ func (b *HeartBeat) close() error {
 	return nil
 }
 func New(interval time.Duration, callback func(), options ...Option) *HeartBeat {
+	if interval <= 0 {
+		fmt.Println("'interval' must be greater than 0!!")
+
+		return nil
+	}
+
 	heartBeat := &HeartBeat{
 		interval: interval,
 		callback: callback,
