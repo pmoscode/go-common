@@ -31,6 +31,7 @@ func (o *observerSingle) hookOnSigTerm() {
 	go func() {
 		<-channel
 		finalize("Graceful shutdown hooks")
+		close(channel)
 		os.Exit(1)
 	}()
 }
