@@ -5,3 +5,11 @@ tasks:
     desc: Update go dependencies
     cmds:
       - go get -u -d ./...
+
+  test:
+    desc: Run go tests
+    cmd: go test ./... --benchmem
+
+  test-v:
+    desc: Run go tests in verbose mode
+    cmd: go test ./... -v --benchmem
