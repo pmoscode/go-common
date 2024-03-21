@@ -6,12 +6,7 @@ func WithName(name string) func(logger *Logger) {
 	}
 }
 
-func WithDryRun(dryRun bool) func(logger *Logger) {
-	var extend string
-
-	if dryRun {
-		extend = "--> DRY RUN <--"
-	}
+func WithExtend(extend string) func(logger *Logger) {
 	return func(s *Logger) {
 		s.extend = extend
 	}

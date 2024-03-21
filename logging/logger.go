@@ -9,9 +9,10 @@ import (
 type Level string
 
 const (
-	INFO  Level = "info"
-	DEBUG Level = "debug"
-	TRACE Level = "trace"
+	INFO    Level = "info"
+	DEBUG   Level = "debug"
+	WARNING Level = "warning"
+	TRACE   Level = "trace"
 )
 
 type Logger struct {
@@ -25,6 +26,10 @@ type Logger struct {
 
 func (l *Logger) Info(format string, params ...any) {
 	l.log("INFO", format, params...)
+}
+
+func (l *Logger) Warning(format string, params ...any) {
+	l.log("WARNING", format, params...)
 }
 
 func (l *Logger) Debug(format string, params ...any) {
