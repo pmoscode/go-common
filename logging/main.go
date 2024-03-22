@@ -2,6 +2,7 @@ package logging
 
 import (
 	"github.com/pmoscode/go-common/process"
+	"log"
 )
 
 func NewLogger(options ...func(*Logger)) *Logger {
@@ -11,7 +12,8 @@ func NewLogger(options ...func(*Logger)) *Logger {
 		trace:           false,
 		extend:          "",
 		nameSpacing:     10,
-		severitySpacing: 5,
+		severitySpacing: 7,
+		writer:          log.Writer(),
 	}
 
 	for _, o := range options {

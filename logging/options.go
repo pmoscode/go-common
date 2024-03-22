@@ -1,5 +1,7 @@
 package logging
 
+import "io"
+
 func WithName(name string) func(logger *Logger) {
 	return func(s *Logger) {
 		s.name = name
@@ -31,5 +33,11 @@ func WithSeveritySpacing(spacing int) func(logger *Logger) {
 func WithNameSpacing(spacing int) func(logger *Logger) {
 	return func(s *Logger) {
 		s.nameSpacing = spacing
+	}
+}
+
+func WithLogWriter(writer io.Writer) func(logger *Logger) {
+	return func(s *Logger) {
+		s.writer = writer
 	}
 }

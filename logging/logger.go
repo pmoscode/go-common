@@ -3,6 +3,7 @@ package logging
 import (
 	"fmt"
 	"github.com/pmoscode/go-common/shutdown"
+	"io"
 	"log"
 )
 
@@ -22,6 +23,7 @@ type Logger struct {
 	extend          string
 	debug           bool
 	trace           bool
+	writer          io.Writer
 }
 
 func (l *Logger) Info(format string, params ...any) {
@@ -66,8 +68,12 @@ func (l *Logger) Panic(err error, format string, params ...any) {
 
 func (l *Logger) log(severity string, format string, params ...any) {
 	entry := fmt.Sprintf(format, params...)
+	line := fmt.Sprintf("%-*s [%*s] %s ### %s", l.severitySpacing, severity, l.nameSpacing, l.name, l.extend, entry)
 
-	log.Printf("%-*s [%*s] %s ### %s\n", l.severitySpacing, severity, l.nameSpacing, l.name, l.extend, entry)
+	_, err := l.writer.Write([]byte(line))
+	if err != nil {
+		return
+	}
 }
 
 func (l *Logger) IdDebug() bool {
