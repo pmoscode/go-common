@@ -1,3 +1,4 @@
+// Package environment implements functions to read values from environment variables of the OS.
 package environment
 
 import (
@@ -6,6 +7,8 @@ import (
 	"strconv"
 )
 
+// GetEnv reads a string value from the environment with the given key.
+// If the key is not found, the default value is returned.
 func GetEnv(key string, defaultVal string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
@@ -14,6 +17,8 @@ func GetEnv(key string, defaultVal string) string {
 	return defaultVal
 }
 
+// GetEnvBool reads a string value from the environment with the given key and returns it as bool.
+// If the key is not found or is not a bool, the default value is returned.
 func GetEnvBool(key string, defaultVal bool) bool {
 	if value, exists := os.LookupEnv(key); exists {
 		boolValue, err := strconv.ParseBool(value)
@@ -29,6 +34,8 @@ func GetEnvBool(key string, defaultVal bool) bool {
 	return defaultVal
 }
 
+// GetEnvInt reads a string value from the environment with the given key and returns it as int.
+// If the key is not found or is not a int, the default value is returned.
 func GetEnvInt(key string, defaultVal int) int {
 	if value, exists := os.LookupEnv(key); exists {
 		intValue, err := strconv.Atoi(value)
