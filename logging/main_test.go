@@ -17,7 +17,7 @@ func (w stringWriter) Write(p []byte) (n int, err error) {
 
 func TestInfoDefault(t *testing.T) {
 	builder := new(strings.Builder)
-	writer := stringWriter{str: builder}
+	writer := &stringWriter{str: builder}
 
 	name := "World"
 

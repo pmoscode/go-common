@@ -23,7 +23,7 @@ type Logger struct {
 	extend          string
 	debug           bool
 	trace           bool
-	writer          io.Writer
+	writer          *io.Writer
 }
 
 func (l *Logger) Info(format string, params ...any) {
@@ -68,14 +68,22 @@ func (l *Logger) Panic(err error, format string, params ...any) {
 
 func (l *Logger) log(severity string, format string, params ...any) {
 	entry := fmt.Sprintf(format, params...)
-	line := fmt.Sprintf("%-*s [%*s] %s ### %s", l.severitySpacing, severity, l.nameSpacing, l.name, l.extend, entry)
+	line := fmt.Sprintf("%s%s", l.header(severity), entry)
 
-	_, err := l.writer.Write([]byte(line))
+	_, err := (*l.writer).Write([]byte(line))
 	if err != nil {
 		return
 	}
 }
 
+func (l *Logger) header(severity string) string {
+	return fmt.Sprintf("%-*s [%*s] %s ### ", l.severitySpacing, severity, l.nameSpacing, l.name, l.extend)
+}
+
 func (l *Logger) IdDebug() bool {
 	return l.debug
+}
+
+func (l *Logger) IdTrace() bool {
+	return l.trace
 }
