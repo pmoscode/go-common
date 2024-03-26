@@ -3,7 +3,7 @@ package yamlconfig
 import (
 	"fmt"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
+	"os"
 )
 
 func LoadConfig(filename string, out interface{}) error {
@@ -21,7 +21,7 @@ func LoadConfig(filename string, out interface{}) error {
 }
 
 func loadYaml(filename string) ([]byte, error) {
-	yamlFile, err := ioutil.ReadFile(filename)
+	yamlFile, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Printf("Error reading YAML file: %s\n", err)
 		return nil, err
