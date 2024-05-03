@@ -1,3 +1,4 @@
+// Package heartbeat implements an interval timer, which executes a function after a tick - like a heartbeat.
 package heartbeat
 
 import (
@@ -6,6 +7,7 @@ import (
 	"time"
 )
 
+// HeartBeat Holds the function, timer and config.
 type HeartBeat struct {
 	interval   time.Duration
 	callback   func()
@@ -14,6 +16,7 @@ type HeartBeat struct {
 	isFirstRun bool
 }
 
+// RunForever Starts the timer and blocks the current thread
 func (b *HeartBeat) RunForever() {
 	b.Run()
 
@@ -21,10 +24,15 @@ func (b *HeartBeat) RunForever() {
 		time.Sleep(10 * time.Second)
 	}
 }
+
+// Run Starts the timer without blocking the current thread
 func (b *HeartBeat) Run() {
 	go b.beat()
 }
 
+// beat Implements the execution logic.
+// Behaves a little bit different, if the function should be executed immediately.
+// Affects the stop function.
 func (b *HeartBeat) beat() {
 	if b.noWait {
 		b.isFirstRun = true
@@ -47,6 +55,7 @@ func (b *HeartBeat) beat() {
 	}
 }
 
+// stop Stops the timer. Does not guarantee a final execution.
 func (b *HeartBeat) stop() error {
 	if !b.isFirstRun {
 		b.done <- true
@@ -55,11 +64,17 @@ func (b *HeartBeat) stop() error {
 	return nil
 }
 
+// close Closes the "done" channel (-> used by stop to end the ticker)
 func (b *HeartBeat) close() error {
 	close(b.done)
 
 	return nil
 }
+
+// New heartbeat instance.
+//   - interval takes the duration of the interval
+//   - callback takes the function, which should be executed every interval
+//   - options can be used to configure the instance
 func New(interval time.Duration, callback func(), options ...Option) *HeartBeat {
 	if interval <= 0 {
 		fmt.Println("'interval' must be greater than 0!!")
