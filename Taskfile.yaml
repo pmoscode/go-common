@@ -1,7 +1,7 @@
 version: '3'
 
 tasks:
-  update-deps:
+  upgrade:
     desc: Update go dependencies
     cmds:
       - go get -u -d ./...
