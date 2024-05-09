@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // GetEnv reads a string value from the environment with the given key.
@@ -49,4 +50,31 @@ func GetEnvInt(key string, defaultVal int) int {
 	}
 
 	return defaultVal
+}
+
+// GetEnvMap reads all environment variables with the given prefix.
+// It returns a map with all env variables found.
+func GetEnvMap(prefix string, cutoffPrefix bool) map[string]string {
+	envMap := make(map[string]string)
+	allEnv := os.Environ()
+
+	for _, env := range allEnv {
+		if strings.HasPrefix(env, prefix) {
+			split := strings.Split(env, "=")
+			key := cleanKey(split[0], prefix, cutoffPrefix)
+			value := split[1]
+
+			envMap[key] = value
+		}
+	}
+
+	return envMap
+}
+
+func cleanKey(key, prefix string, cutoffPrefix bool) string {
+	if cutoffPrefix {
+		key = strings.TrimLeft(key, prefix)
+	}
+
+	return key
 }

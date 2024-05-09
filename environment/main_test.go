@@ -1,6 +1,7 @@
 package environment
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -28,6 +29,7 @@ func TestStringEnv(t *testing.T) {
 		t.Fatal("Expected bool not set: ", false)
 	}
 }
+
 func TestStringDefaultEnv(t *testing.T) {
 	t.Setenv("keyInt", "notAnInt")
 	t.Setenv("keyBool1", "3")
@@ -50,4 +52,19 @@ func TestStringDefaultEnv(t *testing.T) {
 	if bool2Test != true {
 		t.Fatal("Expected bool not set: ", true)
 	}
+}
+
+func TestEnvMap(t *testing.T) {
+	t.Setenv("TEST_one", "one")
+	t.Setenv("TEST_two", "two")
+	t.Setenv("TEST_three", "3")
+	t.Setenv("four", "4")
+
+	envMap := GetEnvMap("TEST_", true)
+
+	if len(envMap) != 3 {
+		t.Fatal("Expected set len == 3 got: ", len(envMap))
+	}
+
+	fmt.Println(envMap)
 }
