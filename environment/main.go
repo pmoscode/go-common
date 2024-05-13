@@ -52,16 +52,22 @@ func GetEnvInt(key string, defaultVal int) int {
 	return defaultVal
 }
 
-// GetEnvMap reads all environment variables with the given prefix.
+// GetEnvMap reads all environment variables with the given prefix. (CAUTION!! Auto attaches the "_" character!!)
+//
 // It returns a map with all env variables found.
 func GetEnvMap(prefix string, cutoffPrefix bool) map[string]string {
 	envMap := make(map[string]string)
 	allEnv := os.Environ()
 
+	calcPrefix := prefix
+	if !strings.HasSuffix(prefix, "_") {
+		calcPrefix += "_"
+	}
+
 	for _, env := range allEnv {
-		if strings.HasPrefix(env, prefix) {
+		if strings.HasPrefix(env, calcPrefix) {
 			split := strings.Split(env, "=")
-			key := cleanKey(split[0], prefix, cutoffPrefix)
+			key := cleanKey(split[0], calcPrefix, cutoffPrefix)
 			value := split[1]
 
 			envMap[key] = value

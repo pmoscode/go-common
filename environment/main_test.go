@@ -58,9 +58,10 @@ func TestEnvMap(t *testing.T) {
 	t.Setenv("TEST_one", "one")
 	t.Setenv("TEST_two", "two")
 	t.Setenv("TEST_three", "3")
+	t.Setenv("TESTING_invalid", "4")
 	t.Setenv("four", "4")
 
-	envMap := GetEnvMap("TEST_", true)
+	envMap := GetEnvMap("TEST", true)
 
 	if len(envMap) != 3 {
 		t.Fatal("Expected set len == 3 got: ", len(envMap))
