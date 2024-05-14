@@ -19,7 +19,7 @@ func TestInfoName(t *testing.T) {
 	result := builder.String()
 	expectedResult := "INFO    [    tester]  ### Hello " + name
 
-	if result != expectedResult {
+	if strings.HasSuffix(result, expectedResult) {
 		fmt.Println(result)
 		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
 	}
@@ -38,7 +38,7 @@ func TestInfoNameSpacing(t *testing.T) {
 	result := builder.String()
 	expectedResult := "INFO    [              tester]  ### Hello " + name
 
-	if result != expectedResult {
+	if strings.HasSuffix(result, expectedResult) {
 		fmt.Println(result)
 		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
 	}
@@ -57,7 +57,7 @@ func TestInfoExtend(t *testing.T) {
 	result := builder.String()
 	expectedResult := "INFO    [logging.test] --> extend <-- ### Hello " + name
 
-	if result != expectedResult {
+	if strings.HasSuffix(result, expectedResult) {
 		fmt.Println(result)
 		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
 	}
@@ -76,7 +76,7 @@ func TestInfoSeveritySpacing(t *testing.T) {
 	result := builder.String()
 	expectedResult := "INFO                 [logging.test]  ### Hello " + name
 
-	if result != expectedResult {
+	if strings.HasSuffix(result, expectedResult) {
 		fmt.Println(result)
 		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
 	}

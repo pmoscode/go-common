@@ -5,6 +5,7 @@ import (
 	"github.com/pmoscode/go-common/shutdown"
 	"io"
 	"log"
+	"time"
 )
 
 type Level string
@@ -23,7 +24,7 @@ type Logger struct {
 	extend          string
 	debug           bool
 	trace           bool
-	writer          *io.Writer
+	writer          io.Writer
 }
 
 func (l *Logger) Info(format string, params ...any) {
@@ -68,9 +69,10 @@ func (l *Logger) Panic(err error, format string, params ...any) {
 
 func (l *Logger) log(severity string, format string, params ...any) {
 	entry := fmt.Sprintf(format, params...)
-	line := fmt.Sprintf("%s%s", l.header(severity), entry)
+	dateStr := time.Now().Format("2006/01/02 15:04:05")
+	line := fmt.Sprintf("%s %s%s\n", dateStr, l.header(severity), entry)
 
-	_, err := (*l.writer).Write([]byte(line))
+	_, err := l.writer.Write([]byte(line))
 	if err != nil {
 		return
 	}

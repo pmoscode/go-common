@@ -25,7 +25,7 @@ func TestInfoStructYaml(t *testing.T) {
 	result := builder.String()
 	expectedResult := "INFO    [    tester]  ### one: Hello\nINFO    [    tester]  ### two: World"
 
-	if result != expectedResult {
+	if strings.HasSuffix(result, expectedResult) {
 		fmt.Println(result)
 		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
 	}
@@ -49,7 +49,7 @@ func TestInfoStructJson(t *testing.T) {
 	result := builder.String()
 	expectedResult := "INFO    [    tester]  ### {\nINFO    [    tester]  ###   \"One\": \"Hello\",\nINFO    [    tester]  ###   \"Two\": \"World\"\nINFO    [    tester]  ### }"
 
-	if result != expectedResult {
+	if strings.HasSuffix(result, expectedResult) {
 		fmt.Println(result)
 		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
 	}

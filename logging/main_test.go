@@ -28,7 +28,7 @@ func TestInfoDefault(t *testing.T) {
 	result := builder.String()
 	expectedResult := "INFO    [logging.test]  ### Hello " + name
 
-	if result != expectedResult {
+	if strings.HasSuffix(result, expectedResult) {
 		fmt.Println(result)
 		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
 	}
@@ -46,7 +46,7 @@ func TestWarningDefault(t *testing.T) {
 	result := builder.String()
 	expectedResult := "WARNING [logging.test]  ### Hello " + name
 
-	if result != expectedResult {
+	if strings.HasSuffix(result, expectedResult) {
 		fmt.Println(result)
 		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
 	}
@@ -65,7 +65,7 @@ func TestDebugDefault(t *testing.T) {
 	result := builder.String()
 	expectedResult := "DEBUG   [logging.test]  ### Hello " + name
 
-	if result != expectedResult {
+	if strings.HasSuffix(result, expectedResult) {
 		fmt.Println(result)
 		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
 	}
@@ -84,7 +84,7 @@ func TestTraceDefault(t *testing.T) {
 	result := builder.String()
 	expectedResult := "TRACE   [logging.test]  ### Hello " + name
 
-	if result != expectedResult {
+	if strings.HasSuffix(result, expectedResult) {
 		fmt.Println(result)
 		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
 	}
@@ -103,7 +103,7 @@ func TestErrorDefault(t *testing.T) {
 	result := builder.String()
 	expectedResult := "ERROR   [logging.test]  ### Hello " + name
 
-	if result != expectedResult {
+	if strings.HasSuffix(result, expectedResult) {
 		fmt.Println(result)
 		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
 	}

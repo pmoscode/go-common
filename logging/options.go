@@ -38,6 +38,6 @@ func WithNameSpacing(spacing int) func(logger *Logger) {
 
 func WithLogWriter(writer io.Writer) func(logger *Logger) {
 	return func(s *Logger) {
-		s.writer = &writer
+		s.writer = writer
 	}
 }

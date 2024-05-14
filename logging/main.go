@@ -2,11 +2,11 @@ package logging
 
 import (
 	"github.com/pmoscode/go-common/process"
-	"log"
+	"os"
 )
 
 func NewLogger(options ...func(*Logger)) *Logger {
-	logWriter := log.Writer()
+	logWriter := os.Stderr
 	logger := &Logger{
 		name:            process.GetExecutableName(),
 		debug:           false,
@@ -14,7 +14,7 @@ func NewLogger(options ...func(*Logger)) *Logger {
 		extend:          "",
 		nameSpacing:     10,
 		severitySpacing: 7,
-		writer:          &logWriter,
+		writer:          logWriter,
 	}
 
 	for _, o := range options {
