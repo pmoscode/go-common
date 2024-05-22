@@ -1,4 +1,5 @@
 // Package yamlconfig provides functions to load yaml configs from a file into a struct.
+// Deprecated Use config module instead
 package yamlconfig
 
 import (
@@ -8,6 +9,7 @@ import (
 )
 
 // LoadConfig loads a yaml config file into a given struct.
+// Deprecated use [.formats.ParseConfig] instead
 func LoadConfig(filename string, out interface{}) error {
 	yamlFileData, err := loadYaml(filename)
 	if err != nil {
