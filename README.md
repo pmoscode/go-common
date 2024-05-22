@@ -8,6 +8,67 @@ A small GO library, which may come handy for recurring tasks or simple use cases
 
 A short briefing of the single modules:
 
+### Config
+
+Loads configuration into a struct. Config can come from a file or the os environment or both.
+The "env" tag must be used to configure the environment loading.
+
+Example:
+```go
+type ConfigData struct {
+	Data1   string             `env:"name=DATA_ONE_STR"`
+	Data2   string             `env:""`
+	Data3   string             `env:"self"`
+    Data4   int                `env:"name=DATA_ONE_INT"`
+    Data5   map[string]string  `env:"prefix=GMD,cutoff=false"`
+    Data6   map[string]float32 `env:"prefix=DAT,cutoff=true"`
+    Data7   map[string]string  `env:"prefix=CUT"`
+}
+```
+
+There are two main categories:
+
+- single (named) values -> string, int, bool, ...
+- multiple named values -> map[string]string, map[string]int, map[string]bool, ...
+
+#### Single values
+
+Tag format: 
+- `env:"name=DATA_ONE_STR,default=default string"`
+- `env:"name=DATA_ONE_STR"`
+- `env:"self,default=default string"`
+
+Explanation:
+
+- "name": defines the name of the environment variable to be loaded into this field
+- "self": if "name" is not provided or the "env" tag is empty, the snake_cased field name is used
+- "default": defines a default value, if the environment variable is not found
+
+#### Multiple named values
+
+Tag format:
+- `env:"prefix=GMD,cutoff=false"`
+- `env:"prefix=DAT,cutoff=true"`
+- `env:"prefix=CUT"`
+
+Explanation:
+
+- "prefix": defines the prefix of the environment variables, which are going to be grouped. NOTE: There is always an "_" at the end of the prefix. If it's missing here, it will be attached automatically.
+- "cutoff": defines, if the prefix itself will be cut off. Ex.: if true, "PRE_DATA_1" => "DATA_1". If just "cutoff" is provided, it's treated as "cutoff=true" internally.
+
+#### Order
+
+The tags "name", "self" and "prefix" are ordered:
+
+1. name
+2. self
+3. prefix
+
+So, if "name" is found, everything else (self, prefix) is ignored.
+
+NOTE: "default" is only considered when "name" or "self" is provided.
+"cutoff" is only considered when "prefix" is provided.
+
 ### Environment
 This provides a simple way to fetch environment variables with defined default values, if they can't be found.
 There are three types:
