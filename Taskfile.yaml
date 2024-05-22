@@ -13,3 +13,19 @@ tasks:
   test-v:
     desc: Run go tests in verbose mode
     cmd: go test ./... -v --benchmem
+
+  check:
+    desc: Run a staticcheck (staticcheck must be installed -> https://staticcheck.dev/docs/getting-started/)
+    cmds:
+      - cd config && staticcheck -tests=false
+      - cd environment && staticcheck -tests=false
+      - cd filesystem && staticcheck -tests=false
+      - cd filter && staticcheck -tests=false
+      - cd heartbeat && staticcheck -tests=false
+      - cd logging && staticcheck -tests=false
+      - cd mqtt && staticcheck -tests=false
+      - cd process && staticcheck -tests=false
+      - cd shutdown && staticcheck -tests=false
+      - cd strings && staticcheck -tests=false
+      - cd templates && staticcheck -tests=false
+      - cd yamlconfig && staticcheck -tests=false
