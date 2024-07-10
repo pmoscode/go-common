@@ -5,6 +5,10 @@ import (
 	"testing"
 )
 
+func TestNilShutdown(t *testing.T) {
+	finalize("Should not fail")
+}
+
 func TestSimpleShutdown(t *testing.T) {
 	count := 0
 

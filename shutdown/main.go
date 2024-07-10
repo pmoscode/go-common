@@ -96,10 +96,12 @@ func ExitOnPanic() {
 
 // finalize Prints the final log. Counts the failed and succeeded function executions
 func finalize(title string) {
-	fmt.Println("########## ", title)
-	success, failed := observerSingleton.executeCommands()
-	fmt.Println("######## Executed ", success+failed, " shutdown commands")
-	fmt.Println("######## Succeeded: ", success)
-	fmt.Println("######## Failed: ", failed)
-	fmt.Println("##########")
+	if observerSingleton != nil {
+		fmt.Println("########## ", title)
+		success, failed := observerSingleton.executeCommands()
+		fmt.Println("######## Executed ", success+failed, " shutdown commands")
+		fmt.Println("######## Succeeded: ", success)
+		fmt.Println("######## Failed: ", failed)
+		fmt.Println("##########")
+	}
 }
