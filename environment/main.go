@@ -52,6 +52,40 @@ func GetEnvInt(key string, defaultVal int) int {
 	return defaultVal
 }
 
+// GetEnvFloat32 reads a string value from the environment with the given key and returns it as float32.
+// If the key is not found or is not a float32, the default value is returned.
+func GetEnvFloat32(key string, defaultVal float32) float32 {
+	if value, exists := os.LookupEnv(key); exists {
+		floatValue, err := strconv.ParseFloat(value, 32)
+		if err == nil {
+			return float32(floatValue)
+		} else {
+			fmt.Printf("Could not parse '%s' for key '%s' as float32! Returning default value: '%f'\n", value, key, defaultVal)
+		}
+	} else {
+		fmt.Printf("Nothing found for key '%s'. Using default value: '%f'\n", key, defaultVal)
+	}
+
+	return defaultVal
+}
+
+// GetEnvFloat64 reads a string value from the environment with the given key and returns it as float64.
+// If the key is not found or is not a float64, the default value is returned.
+func GetEnvFloat64(key string, defaultVal float64) float64 {
+	if value, exists := os.LookupEnv(key); exists {
+		floatValue, err := strconv.ParseFloat(value, 64)
+		if err == nil {
+			return floatValue
+		} else {
+			fmt.Printf("Could not parse '%s' for key '%s' as float64! Returning default value: '%f'\n", value, key, defaultVal)
+		}
+	} else {
+		fmt.Printf("Nothing found for key '%s'. Using default value: '%f'\n", key, defaultVal)
+	}
+
+	return defaultVal
+}
+
 // GetEnvMap reads all environment variables with the given prefix. (CAUTION!! Auto attaches the "_" character!!)
 //
 // It returns a map with all env variables found.
