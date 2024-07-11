@@ -8,6 +8,27 @@ A small GO library, which may come handy for recurring tasks or simple use cases
 
 A short briefing of the single modules:
 
+### Cli
+
+The cli manager can help to get parameters, which are passed as cli arguments and also are provided as environment variables.
+
+A simple example:
+
+```go 
+func LoadCliParameters() {
+    file := NewParameter[string]("file", "file.yaml", "description", "ENV_VAR_FILE")
+    dryRun := NewParameter[bool]("dryRun", false, "description", "ENV_VAR_DRY_RUN")
+    
+    mgr := New()
+    mgr.AddStringParameter(file)
+    mgr.AddBoolParameter(dryRun)
+    mgr.Parse()
+    
+    fmt.Println(*file.GetValue())
+    fmt.Println(*dryRun.GetValue())
+}
+```
+
 ### Config
 
 Loads configuration into a struct. Config can come from a file or the os environment or both.
@@ -74,12 +95,13 @@ This provides a simple way to fetch environment variables with defined default v
 There are three types:
 - Get the raw string
 - Get an int
+- Get an float
 - Get a bool
 
 ### Filesystem
 This provides one function at the moment:
 - Check, if a files exists and if it is really a file (not a directory)
-- 
+
 ### Filter
 This is a helper package to filter a slice. You provide one or more functions to set the matching boundaries.
 
