@@ -9,10 +9,10 @@ type identity interface {
 
 // Parameter holds the parameter configuration and the final value.
 type Parameter[T any] struct {
-	Name         string
-	Usage        string
+	name         string
+	usage        string
 	DefaultValue T
-	EnvVarName   string
+	envVarName   string
 	setCli       bool
 	setEnv       bool
 	value        *T
@@ -21,7 +21,7 @@ type Parameter[T any] struct {
 
 // setFlagFunc adds the parameter to the flag context.
 func (p *Parameter[T]) setFlagFunc(fn func(p *T, name string, value T, usage string)) {
-	fn(p.value, p.Name, p.DefaultValue, p.Usage)
+	fn(p.value, p.name, p.DefaultValue, p.usage)
 }
 
 // setEnvironmentFunc sets the func, which fetches the value from the environment.
@@ -36,27 +36,27 @@ func (p *Parameter[T]) GetValue() *T {
 
 // getName return the parameters name as part of the identity interface.
 func (p *Parameter[T]) getName() string {
-	return p.Name
+	return p.name
 }
 
 // getEnv return the parameters env name as part of the identity interface.
 func (p *Parameter[T]) getEnv() string {
-	return p.EnvVarName
+	return p.envVarName
 }
 
 // loadEnvValue fetches the environment variable as part of the identity interface.
 func (p *Parameter[T]) loadEnvValue() {
-	value := p.envGetFunc(p.EnvVarName, p.DefaultValue)
+	value := p.envGetFunc(p.envVarName, p.DefaultValue)
 	p.value = &value
 }
 
 // NewParameter return a new parameter instance.
 func NewParameter[T any](name string, defaultValue T, usage, envVarName string) *Parameter[T] {
 	return &Parameter[T]{
-		Name:         name,
+		name:         name,
 		DefaultValue: defaultValue,
-		Usage:        usage,
-		EnvVarName:   envVarName,
+		usage:        usage,
+		envVarName:   envVarName,
 		setCli:       false,
 		setEnv:       false,
 		value:        new(T),
