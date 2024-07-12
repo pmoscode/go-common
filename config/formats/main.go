@@ -21,7 +21,8 @@ func parseConfig(filename string, out any, parser Parser) error {
 func loadConfigFile(filename string) ([]byte, error) {
 	configFile, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading config file: %s\n", err)
+		//lint:ignore ST1005 this is a formatted error
+		return nil, fmt.Errorf("error reading config file: %s\n", err)
 	}
 
 	return configFile, nil

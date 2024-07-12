@@ -118,7 +118,8 @@ func (c *mockClient) OptionsReader() mqtt.ClientOptionsReader {
 }
 
 type mockToken struct {
-	cntWait  int
+	cntWait int
+	//lint:ignore U1000
 	cntError int
 	complete chan struct{}
 }
