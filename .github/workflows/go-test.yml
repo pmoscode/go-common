@@ -1,0 +1,40 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - 'main'
+
+jobs:
+  go-test:
+    name: Run all tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: pnorton5432/setup-task@v1
+      with:
+        task-version: 3.38.0
+
+    - uses: actions/setup-go@v5
+      with:
+        go-version-file: './go.mod'
+
+    - run: task test
+
+    - uses: dominikh/staticcheck-action@v1
+      if: github.event_name != 'pull_request'
+      with:
+        version: "latest"
+        install-go: false
+
+    - uses: reviewdog/action-staticcheck@v1
+      if: github.event_name == 'pull_request'
+      with:
+        github_token: ${{ secrets.github_token }}
+        reporter: github-pr-review
+        filter_mode: nofilter
+        fail_on_error: true
