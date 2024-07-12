@@ -1,6 +1,6 @@
 module github.com/pmoscode/go-common
 
-go 1.20
+go 1.22.3
 
 require (
 	github.com/eclipse/paho.mqtt.golang v1.4.3
