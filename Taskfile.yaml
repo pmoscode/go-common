@@ -4,7 +4,7 @@ tasks:
   upgrade:
     desc: Update go dependencies
     cmds:
-      - go get -u -d ./...
+      - go get -u ./...
 
   test:
     desc: Run go tests
@@ -17,6 +17,8 @@ tasks:
   check:
     desc: Run a staticcheck (staticcheck must be installed -> https://staticcheck.dev/docs/getting-started/)
     cmds:
+      - cd cli && staticcheck -tests=false
+      - cd command && staticcheck -tests=false
       - cd config && staticcheck -tests=false
       - cd environment && staticcheck -tests=false
       - cd filesystem && staticcheck -tests=false
