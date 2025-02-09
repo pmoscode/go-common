@@ -82,10 +82,10 @@ func (l *Logger) header(severity string) string {
 	return fmt.Sprintf("%-*s [%*s] %s ### ", l.severitySpacing, severity, l.nameSpacing, l.name, l.extend)
 }
 
-func (l *Logger) IdDebug() bool {
+func (l *Logger) IsDebug() bool {
 	return l.debug
 }
 
-func (l *Logger) IdTrace() bool {
+func (l *Logger) IsTrace() bool {
 	return l.trace
 }
