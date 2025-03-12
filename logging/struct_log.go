@@ -15,9 +15,9 @@ const (
 func (l *Logger) InfoStruct(format OutputFormat, obj any) {
 	switch format {
 	case Json:
-		l.Info(l.addHeader("INFO", strings.PrettyPrintJson(obj)))
+		l.Info(l.addHeader("INFO", strings.PrettyPrintJson(obj)), "")
 	case Yaml:
-		l.Info(l.addHeader("INFO", strings.PrettyPrintYaml(obj)))
+		l.Info(l.addHeader("INFO", strings.PrettyPrintYaml(obj)), "")
 	}
 }
 
