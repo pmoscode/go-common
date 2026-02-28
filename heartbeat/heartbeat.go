@@ -2,7 +2,9 @@
 package heartbeat
 
 import (
+	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/pmoscode/go-common/shutdown"
@@ -12,31 +14,29 @@ import (
 type HeartBeat struct {
 	interval   time.Duration
 	callback   func()
-	done       chan bool
+	cancel     context.CancelFunc
 	noWait     bool
-	isFirstRun bool
+	isFirstRun atomic.Bool
 }
 
-// RunForever Starts the timer and blocks the current thread
-func (b *HeartBeat) RunForever() {
-	b.Run()
-
-	for {
-		time.Sleep(10 * time.Second)
-	}
+// RunForever Starts the timer and blocks the current thread until the context is cancelled.
+func (b *HeartBeat) RunForever(ctx context.Context) {
+	b.Run(ctx)
+	<-ctx.Done()
 }
 
-// Run Starts the timer without blocking the current thread
-func (b *HeartBeat) Run() {
-	go b.beat()
+// Run Starts the timer without blocking the current thread.
+// The heartbeat stops when the given context is cancelled.
+func (b *HeartBeat) Run(ctx context.Context) {
+	ctx, b.cancel = context.WithCancel(ctx)
+	go b.beat(ctx)
 }
 
 // beat Implements the execution logic.
 // Behaves a little bit different, if the function should be executed immediately.
-// Affects the stop function.
-func (b *HeartBeat) beat() {
+func (b *HeartBeat) beat(ctx context.Context) {
 	if b.noWait {
-		b.isFirstRun = true
+		b.isFirstRun.Store(true)
 		b.callback()
 	}
 
@@ -45,30 +45,22 @@ func (b *HeartBeat) beat() {
 
 	for {
 		select {
-		case <-b.done:
+		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if b.isFirstRun {
-				b.isFirstRun = false
+			if b.isFirstRun.Load() {
+				b.isFirstRun.Store(false)
 			}
 			b.callback()
 		}
 	}
 }
 
-// stop Stops the timer. Does not guarantee a final execution.
-func (b *HeartBeat) stop() error {
-	if !b.isFirstRun {
-		b.done <- true
+// Stop cancels the heartbeat context. Safe to call multiple times.
+func (b *HeartBeat) Stop() error {
+	if b.cancel != nil {
+		b.cancel()
 	}
-
-	return nil
-}
-
-// close Closes the "done" channel (-> used by stop to end the ticker)
-func (b *HeartBeat) close() error {
-	close(b.done)
-
 	return nil
 }
 
@@ -82,19 +74,16 @@ func New(interval time.Duration, callback func(), options ...Option) (*HeartBeat
 	}
 
 	heartBeat := &HeartBeat{
-		interval:   interval,
-		callback:   callback,
-		done:       make(chan bool),
-		noWait:     false,
-		isFirstRun: false,
+		interval: interval,
+		callback: callback,
+		noWait:   false,
 	}
 
 	for _, opt := range options {
 		opt(heartBeat)
 	}
 
-	shutdown.GetObserver().AddCommand(heartBeat.stop)
-	shutdown.GetObserver().AddCommand(heartBeat.close)
+	shutdown.GetObserver().AddCommand(heartBeat.Stop)
 
 	return heartBeat, nil
 }
