@@ -5,6 +5,8 @@ import (
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestConnection(t *testing.T) {
@@ -15,9 +17,7 @@ func TestConnection(t *testing.T) {
 		WithUsernameAndPassword("test", "pwd")
 
 	brokerOpt, err := hostConfig.Build()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	client := NewClient(
 		WithClientId("test"),
@@ -26,21 +26,13 @@ func TestConnection(t *testing.T) {
 
 	mockClientImpl := &mockClient{}
 	err = client.connect(mockClientImpl)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	err = client.Disconnect()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	if mockClientImpl.cntConnect != 1 {
-		t.Fatal("Wrong connect count: ", mockClientImpl.cntConnect, " should be ", 1)
-	}
-	if mockClientImpl.cntDisconnect != 1 {
-		t.Fatal("Wrong disconnect count: ", mockClientImpl.cntDisconnect, " should be ", 1)
-	}
+	assert.Equal(t, 1, mockClientImpl.cntConnect)
+	assert.Equal(t, 1, mockClientImpl.cntDisconnect)
 }
 
 func TestPublish(t *testing.T) {
@@ -50,9 +42,7 @@ func TestPublish(t *testing.T) {
 		WithProtocol(MqttTcp)
 
 	brokerOpt, err := hostConfig.Build()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	client := NewClient(
 		WithClientId("test"),
@@ -61,9 +51,7 @@ func TestPublish(t *testing.T) {
 
 	mockClientImpl := &mockClient{}
 	err = client.connect(mockClientImpl)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	client.Publish(&Message{
 		Topic: "/test/testMessage",
@@ -71,19 +59,11 @@ func TestPublish(t *testing.T) {
 	})
 
 	err = client.Disconnect()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	if mockClientImpl.cntConnect != 1 {
-		t.Fatal("Wrong connect count: ", mockClientImpl.cntConnect, " should be ", 1)
-	}
-	if mockClientImpl.cntDisconnect != 1 {
-		t.Fatal("Wrong disconnect count: ", mockClientImpl.cntDisconnect, " should be ", 1)
-	}
-	if mockClientImpl.cntPublish != 1 {
-		t.Fatal("Wrong publish count: ", mockClientImpl.cntPublish, " should be ", 1)
-	}
+	assert.Equal(t, 1, mockClientImpl.cntConnect)
+	assert.Equal(t, 1, mockClientImpl.cntDisconnect)
+	assert.Equal(t, 1, mockClientImpl.cntPublish)
 }
 
 type mockClient struct {

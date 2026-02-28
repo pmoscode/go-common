@@ -1,8 +1,8 @@
 package mqtt
 
 import (
+	"context"
 	"log"
-	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/pmoscode/go-common/shutdown"
@@ -13,7 +13,7 @@ const notConnected = "Mqtt Client not connected! Call 'connect' method..."
 
 // Client wraps the paho MQTT client with convenience methods for connect, publish, subscribe, and disconnect.
 type Client struct {
-	client  *mqtt.Client
+	client  mqtt.Client
 	options *mqtt.ClientOptions
 }
 
@@ -34,7 +34,7 @@ func (c *Client) connect(client mqtt.Client) error {
 		return token.Error()
 	}
 
-	c.client = &client
+	c.client = client
 	log.Println("Mqtt connected to", c.options.Servers[0])
 
 	return nil
@@ -42,7 +42,7 @@ func (c *Client) connect(client mqtt.Client) error {
 
 // Disconnect does a clean disconnect from the mqtt broker.
 func (c *Client) Disconnect() error {
-	(*c.client).Disconnect(100)
+	c.client.Disconnect(100)
 
 	return nil
 }
@@ -53,7 +53,7 @@ func (c *Client) Publish(message *Message) {
 	if c.client == nil {
 		log.Println(notConnected)
 	} else {
-		token := (*c.client).Publish(message.Topic, 2, false, message.FromJson())
+		token := c.client.Publish(message.Topic, 2, false, message.FromJson())
 		token.Wait()
 	}
 }
@@ -64,7 +64,7 @@ func (c *Client) Subscribe(topic string, fn func(message Message)) {
 	if c.client == nil {
 		log.Println(notConnected)
 	} else {
-		(*c.client).Subscribe(topic, 2, func(client mqtt.Client, msg mqtt.Message) {
+		c.client.Subscribe(topic, 2, func(client mqtt.Client, msg mqtt.Message) {
 			message := Message{
 				Topic: msg.Topic(),
 				Value: msg.Payload(),
@@ -74,15 +74,13 @@ func (c *Client) Subscribe(topic string, fn func(message Message)) {
 	}
 }
 
-// LoopForever Halts the current thread.
-func (c *Client) LoopForever() {
+// LoopForever halts the current thread until the context is cancelled.
+// On cancellation, the client will be disconnected cleanly.
+func (c *Client) LoopForever(ctx context.Context) {
 	if c.client == nil {
 		log.Println(notConnected)
 	} else {
 		shutdown.GetObserver().AddCommand(c.Disconnect)
-
-		for {
-			time.Sleep(10 * time.Second)
-		}
+		<-ctx.Done()
 	}
 }
