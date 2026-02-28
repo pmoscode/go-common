@@ -2,17 +2,18 @@
 package process
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 )
 
 // GetExecutableName returns the filename of the execution binary.
 // The complete path is omitted. Only the filename is returned.
-func GetExecutableName() string {
+func GetExecutableName() (string, error) {
 	path, err := os.Executable()
 	if err != nil {
-		panic(err)
+		return "", fmt.Errorf("could not get executable name: %w", err)
 	}
 
-	return filepath.Base(path)
+	return filepath.Base(path), nil
 }
