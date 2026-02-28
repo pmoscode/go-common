@@ -16,10 +16,10 @@ A simple example:
 
 ```go 
 func LoadCliParameters() {
-    file := NewParameter[string]("file", "file.yaml", "description", "ENV_VAR_FILE")
-    dryRun := NewParameter[bool]("dryRun", false, "description", "ENV_VAR_DRY_RUN")
+    file := cli.NewParameter[string]("file", "file.yaml", "description", "ENV_VAR_FILE")
+    dryRun := cli.NewParameter[bool]("dryRun", false, "description", "ENV_VAR_DRY_RUN")
     
-    mgr := New()
+    mgr := cli.New()
     mgr.AddStringParameter(file)
     mgr.AddBoolParameter(dryRun)
     mgr.Parse()
@@ -27,6 +27,36 @@ func LoadCliParameters() {
     fmt.Println(*file.GetValue())
     fmt.Println(*dryRun.GetValue())
 }
+```
+
+### Command
+
+The command package provides a way to execute external commands with logging and dry-run support.
+Parameters can be masked so that sensitive values (e.g. passwords) are hidden in log output.
+
+> **WARNING:** This package passes commands directly to `exec.Command` without sanitization.
+> The caller **must** ensure all inputs are trusted. Do not pass unsanitized user input.
+
+A simple example:
+
+```go
+logger := logging.NewLogger()
+
+// Direct usage
+cmd := command.NewCommand(logger, false)
+params := command.NewParameters(
+    command.WithCommand("echo"),
+    command.WithValue("hello"),
+    command.WithParam("--verbose"),
+    command.WithValueMasked("s3cret"), // will be shown as *** in logs
+)
+err := cmd.Execute(params)
+
+// Or via the Manager (builder pattern)
+mgr := command.NewCommandManager(logger, true) // true = dry-run
+mgr.AddParameter(command.WithCommand("echo"))
+mgr.AddParameter(command.WithValue("hello"))
+err = mgr.ExecuteCommand()
 ```
 
 ### Config
@@ -92,50 +122,120 @@ NOTE: "default" is only considered when "name" or "self" is provided.
 
 ### Environment
 This provides a simple way to fetch environment variables with defined default values, if they can't be found.
-There are three types:
-- Get the raw string
-- Get an int
-- Get an float
-- Get a bool
+There are functions for the following types:
+- `GetEnv` – raw string
+- `GetEnvInt` – int
+- `GetEnvFloat32` – float32
+- `GetEnvFloat64` – float64
+- `GetEnvBool` – bool
+- `GetEnvMap` – all variables with a given prefix as `map[string]string`
 
 ### Filesystem
 This provides one function at the moment:
-- Check, if a files exists and if it is really a file (not a directory)
+- Check, if a file exists and if it is really a file (not a directory)
 
 ### Filter
-This is a helper package to filter a slice. You provide one or more functions to set the matching boundaries.
+This is a generic helper package to filter a slice. You provide one or more filter functions to set the matching boundaries.
+
+```go
+items := []*MyStruct{ /* ... */ }
+f := filter.NewFilter(items)
+result := f.Filter(
+    func(val MyStruct) bool { return val.Age > 18 },
+    func(val MyStruct) bool { return val.Active },
+)
+```
 
 ### Heartbeat
 The heartbeat package is some kind of timer, which executes a given function at an interval.
+It supports `context.Context` for clean cancellation.
 It can be configured, if the first execution should start immediately or after the first interval.
+
+```go
+ctx, cancel := context.WithCancel(context.Background())
+defer cancel()
+
+hb, err := heartbeat.New(5*time.Second, myFunc, heartbeat.WithNoWait())
+if err != nil {
+    log.Fatal(err)
+}
+
+// Non-blocking:
+hb.Run(ctx)
+
+// Or blocking (until context is cancelled):
+// hb.RunForever(ctx)
+```
 
 ### Logging
 The logging package is a simple logger, where you can configure the appearance of the log entry.
-You can also define the io.Writer for it.
+You can also define the `io.Writer` for it.
+
+Available options:
+- `WithName` – set the logger name
+- `WithSeverity` – set the log level (`INFO`, `DEBUG`, `WARNING`, `TRACE`)
+- `WithLogWriter` – set a custom `io.Writer` (default: `os.Stderr`)
+- `WithExtend` – add an extension string to the log header
+- `WithNameSpacing` / `WithSeveritySpacing` – control column widths
+
+Structs can be logged in JSON or YAML format via `InfoStruct`.
 
 ### MQTT
-The mqtt package is a wrapper for the Paho Mqtt client.
-It simplifies the configuration and usage of the publish and subscribe "actions".
+The mqtt package is a wrapper for the [Paho MQTT client](https://github.com/eclipse/paho.mqtt.golang).
+It simplifies the configuration and usage of publish and subscribe actions.
+
+The client supports TLS configuration via `NewBrokerBuilder` and clean shutdown via `context.Context`:
+
+```go
+ctx, cancel := context.WithCancel(context.Background())
+defer cancel()
+
+brokerOpt, err := mqtt.NewBrokerBuilder().
+    WithHost("localhost").
+    WithPort(1883).
+    WithProtocol(mqtt.MqttTcp).
+    Build()
+
+client := mqtt.NewClient(mqtt.WithClientId("my-app"), brokerOpt)
+client.Connect()
+client.LoopForever(ctx) // blocks until context is cancelled
+```
 
 ### Process
 Here at the moment only one function is available:
-- Get the name of the current executable. And only the name, without path.
+- `GetExecutableName()` – returns the name of the current executable (without path). Returns an error if the name cannot be determined.
 
 ### Shutdown
-The shutdown package executes defined function when the app is exiting.
-Either when killed (code 15) or exits normally. Depending on the configuration.
+The shutdown package executes registered functions when the app is exiting.
+It hooks on SIGTERM (code 15) for graceful shutdown and also supports explicit exit via `Exit()`.
 
-### String
+```go
+shutdown.GetObserver().AddCommand(func() error {
+    fmt.Println("Cleaning up...")
+    return nil
+})
+
+// For panic recovery:
+defer shutdown.ExitOnPanic()
+```
+
+### Strings
 In this package you will find two functions:
-- One to pretty format JSON structs
-- One to pretty format YAML structs
+- `PrettyPrintJson` – pretty format any struct as JSON
+- `PrettyPrintYaml` – pretty format any struct as YAML
 
 ### Templates
-This package contains a TemplateManager. The purpose is to make GO templates (via the GO templating engine)
+This package contains a generic `TemplateManager`. The purpose is to make GO templates (via the GO templating engine)
 accessible via name. So called "named templates".
 Every template in this manager can be populated with defined options. Currently only with custom template functions.
 
+> **Note:** This package uses `text/template` which does **not** perform HTML escaping.
+> Do not use it for HTML output. Use `html/template` from the standard library instead.
+
 ### Yamlconfig
+
+> **Deprecated:** Use the `config` package with `formats.ParseYamlConfig` instead.
+
 The yamlconfig package loads YAML config files into a given struct.
 
 ## Installation
@@ -155,6 +255,10 @@ If you want to get a specific version:
 
 Most packages have tests, so you can see the usage there.
 But for most packages, even that is not necessary.
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Documentation
 
