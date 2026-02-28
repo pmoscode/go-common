@@ -3,8 +3,9 @@ package heartbeat
 
 import (
 	"fmt"
-	"github.com/pmoscode/go-common/shutdown"
 	"time"
+
+	"github.com/pmoscode/go-common/shutdown"
 )
 
 // HeartBeat Holds the function, timer and config.
@@ -75,11 +76,9 @@ func (b *HeartBeat) close() error {
 //   - interval takes the duration of the interval
 //   - callback takes the function, which should be executed every interval
 //   - options can be used to configure the instance
-func New(interval time.Duration, callback func(), options ...Option) *HeartBeat {
+func New(interval time.Duration, callback func(), options ...Option) (*HeartBeat, error) {
 	if interval <= 0 {
-		fmt.Println("'interval' must be greater than 0!!")
-
-		return nil
+		return nil, fmt.Errorf("'interval' must be greater than 0")
 	}
 
 	heartBeat := &HeartBeat{
@@ -97,5 +96,5 @@ func New(interval time.Duration, callback func(), options ...Option) *HeartBeat 
 	shutdown.GetObserver().AddCommand(heartBeat.stop)
 	shutdown.GetObserver().AddCommand(heartBeat.close)
 
-	return heartBeat
+	return heartBeat, nil
 }
