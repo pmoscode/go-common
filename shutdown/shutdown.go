@@ -105,3 +105,20 @@ func finalize(title string) {
 		log.Println("##########")
 	}
 }
+
+// ResetForTesting resets the singleton observer instance so that tests can run in isolation.
+//
+// WARNING: This function is ONLY intended for use in tests! Calling this in production code
+// will remove all registered shutdown hooks and break graceful shutdown behavior.
+// There is NO recovery from this – all previously registered hooks are lost.
+//
+// Usage:
+//
+//	func TestSomething(t *testing.T) {
+//	    defer shutdown.ResetForTesting()
+//	    // ... test code ...
+//	}
+func ResetForTesting() {
+	observerSingleton = nil
+	once = sync.Once{}
+}

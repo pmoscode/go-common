@@ -3,13 +3,18 @@ package shutdown
 import (
 	"errors"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNilShutdown(t *testing.T) {
+	defer ResetForTesting()
 	finalize("Should not fail")
 }
 
 func TestSimpleShutdown(t *testing.T) {
+	defer ResetForTesting()
+
 	count := 0
 
 	func1 := func() error {
@@ -31,17 +36,9 @@ func TestSimpleShutdown(t *testing.T) {
 	GetObserver().AddCommand(func2)
 	GetObserver().AddCommand(func3)
 
-	success, err := observerSingleton.executeCommands()
+	success, failed := observerSingleton.executeCommands()
 
-	if count != 6 {
-		t.Fatal("Wrong count after execution of commands: ", count, " should be ", 6)
-	}
-
-	if success != 2 {
-		t.Fatal("Success execution should be: 2 not ", success)
-	}
-
-	if err != 1 {
-		t.Fatal("Failed execution should be: 1 not ", err)
-	}
+	assert.Equal(t, 6, count, "count after execution of all commands")
+	assert.Equal(t, 2, success, "successful executions")
+	assert.Equal(t, 1, failed, "failed executions")
 }
