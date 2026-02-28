@@ -74,6 +74,16 @@ func TestTraceDefault(t *testing.T) {
 	assert.Contains(t, result, "### Hello World")
 }
 
+func TestTraceDisabled(t *testing.T) {
+	builder := new(strings.Builder)
+	writer := stringWriter{str: builder}
+
+	log := NewLogger(WithLogWriter(writer))
+	log.Trace("Hello %s", "World")
+
+	assert.Empty(t, builder.String(), "trace output should be empty when trace is disabled")
+}
+
 func TestErrorDefault(t *testing.T) {
 	builder := new(strings.Builder)
 	writer := stringWriter{str: builder}
@@ -85,4 +95,55 @@ func TestErrorDefault(t *testing.T) {
 	result := builder.String()
 	assert.Contains(t, result, "ERROR   [logging.test]  ")
 	assert.Contains(t, result, "### Hello World")
+}
+
+func TestErrorNilErr(t *testing.T) {
+	builder := new(strings.Builder)
+	writer := stringWriter{str: builder}
+
+	log := NewLogger(WithLogWriter(writer))
+	log.Error(nil, "no error here")
+
+	result := builder.String()
+	assert.Contains(t, result, "### no error here")
+}
+
+func TestIsDebug(t *testing.T) {
+	log := NewLogger(WithLogWriter(&strings.Builder{}))
+	assert.False(t, log.IsDebug())
+
+	logDebug := NewLogger(WithLogWriter(&strings.Builder{}), WithSeverity(DEBUG))
+	assert.True(t, logDebug.IsDebug())
+}
+
+func TestIsTrace(t *testing.T) {
+	log := NewLogger(WithLogWriter(&strings.Builder{}))
+	assert.False(t, log.IsTrace())
+
+	logTrace := NewLogger(WithLogWriter(&strings.Builder{}), WithSeverity(TRACE))
+	assert.True(t, logTrace.IsTrace())
+}
+
+func TestPanicLogger(t *testing.T) {
+	builder := new(strings.Builder)
+	writer := stringWriter{str: builder}
+
+	log := NewLogger(WithLogWriter(writer))
+	err := errors.New("panic error")
+
+	assert.PanicsWithValue(t, err, func() {
+		log.Panic(err, "panic msg")
+	})
+
+	assert.Contains(t, builder.String(), "### panic msg")
+}
+
+func TestDebugAlsoEnablesInTraceMode(t *testing.T) {
+	builder := new(strings.Builder)
+	writer := stringWriter{str: builder}
+
+	log := NewLogger(WithLogWriter(writer), WithSeverity(TRACE))
+	log.Debug("debug in trace mode")
+
+	assert.Contains(t, builder.String(), "### debug in trace mode")
 }

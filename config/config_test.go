@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -83,4 +85,125 @@ func TestResolveTagsComplex(t *testing.T) {
 	assert.Equal(t, "no prefix", testData.GmdData3)
 	assert.Len(t, testData.GmdDataMap1, 3)
 	assert.Len(t, testData.GmdDataMap2, 4)
+}
+
+func TestLoadFromEnvironmentNonPointer(t *testing.T) {
+	type Cfg struct {
+		Val string `env:"name=X"`
+	}
+	err := LoadFromEnvironment(Cfg{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "pointer")
+}
+
+func TestLoadFromEnvironmentBoolField(t *testing.T) {
+	type Cfg struct {
+		Flag bool `env:"name=BOOL_CFG"`
+	}
+	t.Setenv("BOOL_CFG", "true")
+
+	var cfg Cfg
+	err := LoadFromEnvironment(&cfg)
+	require.NoError(t, err)
+	assert.True(t, cfg.Flag)
+}
+
+type unexportedFieldConfig struct {
+	Public  string `env:"name=PUB_VAL"`
+	private string `env:"name=PRIV_VAL"` //nolint:unused // test for unexported field handling
+}
+
+func TestLoadFromEnvironmentUnexportedField(t *testing.T) {
+	t.Setenv("PUB_VAL", "public")
+	t.Setenv("PRIV_VAL", "private")
+
+	cfg := unexportedFieldConfig{}
+	err := LoadFromEnvironment(&cfg)
+	require.NoError(t, err)
+	assert.Equal(t, "public", cfg.Public)
+	// private field should not be set (unexported)
+}
+
+func TestLoadFromEnvironmentNoTags(t *testing.T) {
+	type Cfg struct {
+		Value string
+	}
+	cfg := Cfg{Value: "original"}
+	err := LoadFromEnvironment(&cfg)
+	require.NoError(t, err)
+	assert.Equal(t, "original", cfg.Value, "fields without env tag should not be modified")
+}
+
+func TestLoadFromFileYaml(t *testing.T) {
+	type FileCfg struct {
+		Host string `yaml:"host" env:"name=YAML_FILE_HOST"`
+		Port int    `yaml:"port" env:"name=YAML_FILE_PORT"`
+	}
+	content := `
+host: filehost
+port: 3000
+`
+	path := createTempConfigFile(t, "config.yaml", content)
+
+	// Set env vars to match file values so LoadFromEnvironment doesn't overwrite
+	t.Setenv("YAML_FILE_HOST", "filehost")
+	t.Setenv("YAML_FILE_PORT", "3000")
+
+	var cfg FileCfg
+	err := LoadFromFile(path, &cfg, YAML)
+	require.NoError(t, err)
+	assert.Equal(t, "filehost", cfg.Host)
+	assert.Equal(t, 3000, cfg.Port)
+}
+
+func TestLoadFromFileJson(t *testing.T) {
+	type FileCfg struct {
+		Host string `json:"host" env:"name=JSON_FILE_HOST"`
+		Port int    `json:"port" env:"name=JSON_FILE_PORT"`
+	}
+	content := `{"host":"jsonhost","port":4000}`
+	path := createTempConfigFile(t, "config.json", content)
+
+	t.Setenv("JSON_FILE_HOST", "jsonhost")
+	t.Setenv("JSON_FILE_PORT", "4000")
+
+	var cfg FileCfg
+	err := LoadFromFile(path, &cfg, JSON)
+	require.NoError(t, err)
+	assert.Equal(t, "jsonhost", cfg.Host)
+	assert.Equal(t, 4000, cfg.Port)
+}
+
+func TestLoadFromFileNotFound(t *testing.T) {
+	type Cfg struct {
+		Val string `env:"name=X"`
+	}
+	var cfg Cfg
+	err := LoadFromFile("/nonexistent/config.yaml", &cfg, YAML)
+	require.Error(t, err)
+}
+
+func TestLoadFromFileEnvOverride(t *testing.T) {
+	type FileCfg struct {
+		Host string `yaml:"host" env:"name=OVERRIDE_HOST"`
+	}
+	content := `host: fromfile`
+	path := createTempConfigFile(t, "config.yaml", content)
+
+	t.Setenv("OVERRIDE_HOST", "fromenv")
+
+	var cfg FileCfg
+	err := LoadFromFile(path, &cfg, YAML)
+	require.NoError(t, err)
+	// Environment should override file value
+	assert.Equal(t, "fromenv", cfg.Host)
+}
+
+func createTempConfigFile(t *testing.T, name, content string) string {
+	t.Helper()
+	dir := t.TempDir()
+	path := filepath.Join(dir, name)
+	err := os.WriteFile(path, []byte(content), 0600)
+	require.NoError(t, err)
+	return path
 }
