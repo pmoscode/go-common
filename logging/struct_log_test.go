@@ -1,9 +1,10 @@
 package logging
 
 import (
-	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInfoStructYaml(t *testing.T) {
@@ -19,17 +20,13 @@ func TestInfoStructYaml(t *testing.T) {
 	}
 
 	log := NewLogger(WithLogWriter(writer), WithName("tester"))
-
 	log.InfoStruct(Yaml, structObj)
 
 	result := builder.String()
-	expectedResult := "INFO    [    tester]  ### one: Hello\nINFO    [    tester]  ### two: World"
-
-	if strings.HasSuffix(result, expectedResult) {
-		fmt.Println(result)
-		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
-	}
+	assert.Contains(t, result, "INFO    [    tester]  ### one: Hello")
+	assert.Contains(t, result, "INFO    [    tester]  ### two: World")
 }
+
 func TestInfoStructJson(t *testing.T) {
 	builder := new(strings.Builder)
 	writer := stringWriter{str: builder}
@@ -43,14 +40,9 @@ func TestInfoStructJson(t *testing.T) {
 	}
 
 	log := NewLogger(WithLogWriter(writer), WithName("tester"))
-
 	log.InfoStruct(Json, structObj)
 
 	result := builder.String()
-	expectedResult := "INFO    [    tester]  ### {\nINFO    [    tester]  ###   \"One\": \"Hello\",\nINFO    [    tester]  ###   \"Two\": \"World\"\nINFO    [    tester]  ### }"
-
-	if strings.HasSuffix(result, expectedResult) {
-		fmt.Println(result)
-		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
-	}
+	assert.Contains(t, result, "INFO    [    tester]  ###   \"One\": \"Hello\",")
+	assert.Contains(t, result, "INFO    [    tester]  ###   \"Two\": \"World\"")
 }

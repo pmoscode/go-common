@@ -2,9 +2,10 @@ package logging
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type stringWriter struct {
@@ -19,92 +20,69 @@ func TestInfoDefault(t *testing.T) {
 	builder := new(strings.Builder)
 	writer := &stringWriter{str: builder}
 
-	name := "World"
-
 	log := NewLogger(WithLogWriter(writer))
-
-	log.Info("Hello %s", name)
+	log.Info("Hello %s", "World")
 
 	result := builder.String()
-	expectedResult := "INFO    [logging.test]  ### Hello " + name
-
-	if strings.HasSuffix(result, expectedResult) {
-		fmt.Println(result)
-		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
-	}
+	assert.Contains(t, result, "INFO    [logging.test]  ")
+	assert.Contains(t, result, "### Hello World")
 }
+
 func TestWarningDefault(t *testing.T) {
 	builder := new(strings.Builder)
 	writer := stringWriter{str: builder}
 
-	name := "World"
-
 	log := NewLogger(WithLogWriter(writer))
-
-	log.Warning("Hello %s", name)
+	log.Warning("Hello %s", "World")
 
 	result := builder.String()
-	expectedResult := "WARNING [logging.test]  ### Hello " + name
-
-	if strings.HasSuffix(result, expectedResult) {
-		fmt.Println(result)
-		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
-	}
+	assert.Contains(t, result, "WARNING [logging.test]  ")
+	assert.Contains(t, result, "### Hello World")
 }
 
 func TestDebugDefault(t *testing.T) {
 	builder := new(strings.Builder)
 	writer := stringWriter{str: builder}
 
-	name := "World"
-
 	log := NewLogger(WithLogWriter(writer), WithSeverity(DEBUG))
-
-	log.Debug("Hello %s", name)
+	log.Debug("Hello %s", "World")
 
 	result := builder.String()
-	expectedResult := "DEBUG   [logging.test]  ### Hello " + name
+	assert.Contains(t, result, "DEBUG   [logging.test]  ")
+	assert.Contains(t, result, "### Hello World")
+}
 
-	if strings.HasSuffix(result, expectedResult) {
-		fmt.Println(result)
-		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
-	}
+func TestDebugDisabled(t *testing.T) {
+	builder := new(strings.Builder)
+	writer := stringWriter{str: builder}
+
+	log := NewLogger(WithLogWriter(writer))
+	log.Debug("Hello %s", "World")
+
+	assert.Empty(t, builder.String(), "debug output should be empty when debug is disabled")
 }
 
 func TestTraceDefault(t *testing.T) {
 	builder := new(strings.Builder)
 	writer := stringWriter{str: builder}
 
-	name := "World"
-
 	log := NewLogger(WithLogWriter(writer), WithSeverity(TRACE))
-
-	log.Trace("Hello %s", name)
+	log.Trace("Hello %s", "World")
 
 	result := builder.String()
-	expectedResult := "TRACE   [logging.test]  ### Hello " + name
-
-	if strings.HasSuffix(result, expectedResult) {
-		fmt.Println(result)
-		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
-	}
+	assert.Contains(t, result, "TRACE   [logging.test]  ")
+	assert.Contains(t, result, "### Hello World")
 }
 
 func TestErrorDefault(t *testing.T) {
 	builder := new(strings.Builder)
 	writer := stringWriter{str: builder}
 
-	name := "World"
-
 	log := NewLogger(WithLogWriter(writer))
 	err := errors.New("test error")
-	log.Error(err, "Hello %s", name)
+	log.Error(err, "Hello %s", "World")
 
 	result := builder.String()
-	expectedResult := "ERROR   [logging.test]  ### Hello " + name
-
-	if strings.HasSuffix(result, expectedResult) {
-		fmt.Println(result)
-		t.Fatalf("Output should be: '%s' but got '%s'", expectedResult, result)
-	}
+	assert.Contains(t, result, "ERROR   [logging.test]  ")
+	assert.Contains(t, result, "### Hello World")
 }

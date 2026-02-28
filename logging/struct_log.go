@@ -1,7 +1,9 @@
 package logging
 
 import (
+	"fmt"
 	strings2 "strings"
+	"time"
 
 	"github.com/pmoscode/go-common/strings"
 )
@@ -18,16 +20,21 @@ const (
 
 // InfoStruct logs a struct in the given format (JSON or YAML) with INFO severity.
 func (l *Logger) InfoStruct(format OutputFormat, obj any) {
+	var structString string
 	switch format {
 	case Json:
-		l.Info(l.addHeader("INFO", strings.PrettyPrintJson(obj)), "")
+		structString = strings.PrettyPrintJson(obj)
 	case Yaml:
-		l.Info(l.addHeader("INFO", strings.PrettyPrintYaml(obj)), "")
+		structString = strings.PrettyPrintYaml(obj)
 	}
-}
 
-func (l *Logger) addHeader(severity string, structString string) string {
-	header := l.header(severity)
+	header := l.header("INFO")
+	dateStr := time.Now().Format("2006/01/02 15:04:05")
 
-	return strings2.ReplaceAll(structString, "\n", "\n"+header)
+	// Prefix every line with timestamp + header
+	lines := strings2.Split(structString, "\n")
+	for _, line := range lines {
+		formatted := fmt.Sprintf("%s %s%s\n", dateStr, header, line)
+		_, _ = l.writer.Write([]byte(formatted))
+	}
 }
