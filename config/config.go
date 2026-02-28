@@ -7,11 +7,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
+	"strconv"
+
 	"github.com/pmoscode/go-common/config/formats"
 	"github.com/pmoscode/go-common/config/meta"
 	"gopkg.in/yaml.v3"
-	"reflect"
-	"strconv"
 )
 
 // Format defines the currently possible config file format (YAML or JSON)
@@ -102,11 +103,19 @@ func resolveNameTag(fieldType reflect.Type, element reflect.Value, metaTag *meta
 	case reflect.Int32:
 		fallthrough
 	case reflect.Int64:
-		element.SetInt(metaTag.ValueAsInt())
+		val, err := metaTag.ValueAsInt()
+		if err != nil {
+			return err
+		}
+		element.SetInt(val)
 	case reflect.String:
 		element.SetString(metaTag.ValueAsString())
 	case reflect.Bool:
-		element.SetBool(metaTag.ValueAsBool())
+		val, err := metaTag.ValueAsBool()
+		if err != nil {
+			return err
+		}
+		element.SetBool(val)
 	default:
 		return errors.New("Invalid field type: " + fieldType.String())
 	}
@@ -147,19 +156,23 @@ func resolvePrefixTagEnvItem(key string, value string, keyType reflect.Type, val
 	valueElement := valueType.Elem()
 
 	if !valueValue.Type().ConvertibleTo(valueElement) {
+		var err error
 		switch valueElement.Kind() {
 		case reflect.Int:
-			valueValue = getPrimitive(strconv.Atoi(value))
+			valueValue, err = getPrimitive(strconv.Atoi(value))
 		case reflect.Int32:
-			valueValue = getPrimitive(strconv.ParseInt(value, 10, 32))
+			valueValue, err = getPrimitive(strconv.ParseInt(value, 10, 32))
 		case reflect.Int64:
-			valueValue = getPrimitive(strconv.ParseInt(value, 10, 64))
+			valueValue, err = getPrimitive(strconv.ParseInt(value, 10, 64))
 		case reflect.Float32:
-			valueValue = getPrimitive(strconv.ParseFloat(value, 32))
+			valueValue, err = getPrimitive(strconv.ParseFloat(value, 32))
 		case reflect.Float64:
-			valueValue = getPrimitive(strconv.ParseFloat(value, 64))
+			valueValue, err = getPrimitive(strconv.ParseFloat(value, 64))
 		default:
 			return fmt.Errorf("can't assign value to type %v", keyType.Kind())
+		}
+		if err != nil {
+			return err
 		}
 	}
 
@@ -167,10 +180,10 @@ func resolvePrefixTagEnvItem(key string, value string, keyType reflect.Type, val
 	return nil
 }
 
-func getPrimitive(val any, err error) reflect.Value {
+func getPrimitive(val any, err error) (reflect.Value, error) {
 	if err != nil {
-		panic(err)
+		return reflect.Value{}, fmt.Errorf("could not parse primitive value: %w", err)
 	}
 
-	return reflect.ValueOf(val)
+	return reflect.ValueOf(val), nil
 }
