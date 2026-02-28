@@ -1,16 +1,17 @@
 package mqtt
 
 import (
-	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/pmoscode/go-common/shutdown"
 	"log"
 	"time"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/pmoscode/go-common/shutdown"
 )
 
 // Defines a default error message.
 const notConnected = "Mqtt Client not connected! Call 'connect' method..."
 
-// Client struct, which holds the client itself and the options for it.
+// Client wraps the paho MQTT client with convenience methods for connect, publish, subscribe, and disconnect.
 type Client struct {
 	client  *mqtt.Client
 	options *mqtt.ClientOptions

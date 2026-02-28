@@ -5,7 +5,9 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-// Deprecated: Use "NewClient" instead of this. Will be removed in future version.
+// CreateClient creates a new MQTT client with the given parameters.
+//
+// Deprecated: Use [NewClient] instead. Will be removed in a future version.
 func CreateClient(ip string, port int, clientId string) *Client {
 	return NewClient(WithBroker(ip, port), WithClientId(clientId))
 }

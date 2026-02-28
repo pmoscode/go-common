@@ -1,9 +1,10 @@
 package mqtt
 
 import (
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"testing"
 	"time"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 func TestConnection(t *testing.T) {
@@ -13,13 +14,18 @@ func TestConnection(t *testing.T) {
 		WithProtocol(MqttTcp).
 		WithUsernameAndPassword("test", "pwd")
 
+	brokerOpt, err := hostConfig.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	client := NewClient(
 		WithClientId("test"),
-		hostConfig.Build(),
+		brokerOpt,
 	)
 
 	mockClientImpl := &mockClient{}
-	err := client.connect(mockClientImpl)
+	err = client.connect(mockClientImpl)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,13 +49,18 @@ func TestPublish(t *testing.T) {
 		WithPort(1883).
 		WithProtocol(MqttTcp)
 
+	brokerOpt, err := hostConfig.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	client := NewClient(
 		WithClientId("test"),
-		hostConfig.Build(),
+		brokerOpt,
 	)
 
 	mockClientImpl := &mockClient{}
-	err := client.connect(mockClientImpl)
+	err = client.connect(mockClientImpl)
 	if err != nil {
 		t.Fatal(err)
 	}

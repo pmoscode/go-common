@@ -81,11 +81,16 @@ func (b *Broker) WithTlsCertificates(caPemPath, clientCrtPath, clientKeyPath str
 	return b
 }
 
-// WithSkipVerification the client will skip validating the cert chain and the hostname
+// WithSkipVerification the client will skip validating the cert chain and the hostname.
+//
+// WARNING: This option disables TLS certificate verification, making the connection vulnerable
+// to Man-in-the-Middle (MITM) attacks. Only use this for development or testing purposes.
+// NEVER use this in production environments.
 //
 //	see: [crypto/tls.Config.skipVerification]
 func (b *Broker) WithSkipVerification() *Broker {
 	b.skipVerification = true
+	log.Println("WARNING: TLS certificate verification is disabled (InsecureSkipVerify). This is insecure and should NOT be used in production!")
 
 	return b
 }
@@ -102,33 +107,43 @@ func (b *Broker) WithUsernameAndPassword(username, password string) *Broker {
 }
 
 // Build should be called, when all configuration is done. It creates an Option type, which is used in NewClient function.
-func (b *Broker) Build() Option {
+// Returns an error if the TLS configuration fails.
+func (b *Broker) Build() (Option, error) {
+	var tlsConfig *tls.Config
+	if b.tlsConfigured {
+		var err error
+		tlsConfig, err = b.buildTLSConfig()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return func(options *pahoMqtt.ClientOptions) {
 		if b.username != "" || b.password != "" {
 			options.SetUsername(b.username)
 			options.SetPassword(b.password)
 		}
 
-		if b.tlsConfigured {
-			options.SetTLSConfig(b.buildTLSConfig())
+		if tlsConfig != nil {
+			options.SetTLSConfig(tlsConfig)
 		}
 
 		options.AddBroker(fmt.Sprintf("%s%s:%d", b.protocol, b.host, b.port))
-	}
+	}, nil
 }
 
 // buildTLSConfig is an internal function, which set up the TLS configuration.
-func (b *Broker) buildTLSConfig() *tls.Config {
+func (b *Broker) buildTLSConfig() (*tls.Config, error) {
 	certPool := x509.NewCertPool()
 	ca, err := os.ReadFile(b.caPemPath)
 	if err != nil {
-		log.Fatalln(err.Error())
+		return nil, fmt.Errorf("could not read CA certificate '%s': %w", b.caPemPath, err)
 	}
 	certPool.AppendCertsFromPEM(ca)
 
 	clientKeyPair, err := tls.LoadX509KeyPair(b.clientCrtPath, b.clientKeyPath)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("could not load client key pair: %w", err)
 	}
 
 	tlsConfig := &tls.Config{
@@ -138,7 +153,7 @@ func (b *Broker) buildTLSConfig() *tls.Config {
 		InsecureSkipVerify: b.skipVerification,
 		Certificates:       []tls.Certificate{clientKeyPair},
 	}
-	return tlsConfig
+	return tlsConfig, nil
 }
 
 // adjustProtocolToSecure is called to ensure, that the protocol matches the possible configured TLS config.
