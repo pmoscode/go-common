@@ -4,6 +4,8 @@ import (
 	"flag"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSimpleCli(t *testing.T) {
@@ -22,13 +24,8 @@ func TestSimpleCli(t *testing.T) {
 	mgr.AddStringParameter(file)
 	mgr.Parse()
 
-	if *arg.GetValue() != "Title" {
-		t.Error("Expected Title, got ", *arg.GetValue())
-	}
-
-	if *file.GetValue() != "file.yaml" {
-		t.Error("Expected file.yaml, got ", *file.GetValue())
-	}
+	assert.Equal(t, "Title", *arg.GetValue())
+	assert.Equal(t, "file.yaml", *file.GetValue())
 }
 
 func TestAdvancedCli(t *testing.T) {
@@ -48,13 +45,8 @@ func TestAdvancedCli(t *testing.T) {
 	mgr.AddStringParameter(file)
 	mgr.Parse()
 
-	if *arg.GetValue() != "Title" {
-		t.Error("Expected Title, got ", *arg.GetValue())
-	}
-
-	if *file.GetValue() != "one.yaml" {
-		t.Error("Expected one.yaml, got ", *file.GetValue())
-	}
+	assert.Equal(t, "Title", *arg.GetValue())
+	assert.Equal(t, "one.yaml", *file.GetValue())
 }
 
 func TestComplexCli(t *testing.T) {
@@ -75,13 +67,8 @@ func TestComplexCli(t *testing.T) {
 	mgr.AddStringParameter(file)
 	mgr.Parse()
 
-	if *arg.GetValue() != "Title" {
-		t.Error("Expected Title, got ", *arg.GetValue())
-	}
-
-	if *file.GetValue() != "config.yaml" {
-		t.Error("Expected one.yaml, got ", *file.GetValue())
-	}
+	assert.Equal(t, "Title", *arg.GetValue())
+	assert.Equal(t, "config.yaml", *file.GetValue())
 }
 
 func TestSimpleMixedCli(t *testing.T) {
@@ -104,19 +91,8 @@ func TestSimpleMixedCli(t *testing.T) {
 	mgr.AddFloat64Parameter(calc)
 	mgr.Parse()
 
-	if *arg.GetValue() != "Title" {
-		t.Error("Expected Title, got ", *arg.GetValue())
-	}
-
-	if *file.GetValue() != "file.yaml" {
-		t.Error("Expected file.yaml, got ", *file.GetValue())
-	}
-
-	if !*dryRun.GetValue() {
-		t.Error("Expected true, got ", *dryRun.GetValue())
-	}
-
-	if *calc.GetValue() != 32.5 {
-		t.Error("Expected 32.5, got ", *calc.GetValue())
-	}
+	assert.Equal(t, "Title", *arg.GetValue())
+	assert.Equal(t, "file.yaml", *file.GetValue())
+	assert.True(t, *dryRun.GetValue())
+	assert.Equal(t, 32.5, *calc.GetValue())
 }

@@ -1,6 +1,10 @@
 package yamlconfig
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 type TestConfig struct {
 	Data TestConfigData `yaml:"someData"`
@@ -20,11 +24,7 @@ someData:
 
 	c := TestConfig{}
 	err := parseYaml([]byte(testData), &c)
-	if err != nil {
-		t.Fatal("Error thrown: ", err)
-	}
-
-	if c.Data.One != "localhost" {
-		t.Fatal("Config: MqttHost is '", c.Data.One, "' not 'localhost'")
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, "localhost", c.Data.One)
+	assert.Equal(t, 2, c.Data.Two)
 }

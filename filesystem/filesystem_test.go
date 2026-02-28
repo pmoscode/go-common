@@ -1,50 +1,31 @@
 package filesystem
 
 import (
-	"fmt"
-	"log"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFileExists(t *testing.T) {
-	file := createTempFile()
+	file := createTempFile(t)
 	defer os.Remove(file)
 
-	if !FileExists(file) {
-		listDirectory()
-		t.Fatal("Expected file not found: ", file)
-	}
+	assert.True(t, FileExists(file), "expected file to exist: %s", file)
 }
+
 func TestFileNotExists(t *testing.T) {
 	file := "not-existent-file.txt"
 
-	if FileExists(file) {
-		listDirectory()
-		t.Fatal("File should not exist: ", file)
-	}
+	assert.False(t, FileExists(file), "file should not exist: %s", file)
 }
 
-func createTempFile() string {
-	dir := "./" // replace with your desired directory
-	pattern := "temp-*.txt"
-
-	f, err := os.CreateTemp(dir, pattern)
-	if err != nil {
-		fmt.Printf("Error creating temporary file: %v\n", err)
-	}
+func createTempFile(t *testing.T) string {
+	t.Helper()
+	f, err := os.CreateTemp("./", "temp-*.txt")
+	require.NoError(t, err, "could not create temp file")
 	defer f.Close()
 
 	return f.Name()
-}
-
-func listDirectory() {
-	files, err := os.ReadDir("./")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, file := range files {
-		fmt.Println(file.Name())
-	}
 }

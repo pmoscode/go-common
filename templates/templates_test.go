@@ -1,8 +1,10 @@
 package templates
 
 import (
-	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type data struct {
@@ -15,9 +17,7 @@ func TestTemplateManager(t *testing.T) {
 
 	templateManager := NewTemplateManager[data]()
 	err := templateManager.AddTemplate("test", "Hello {{ .One }}! How is {{ .Two }}?")
-	if err != nil {
-		t.Fatalf("Error occured %t", err)
-	}
+	require.NoError(t, err)
 
 	dataObj := &data{
 		One: "Test 1",
@@ -25,12 +25,7 @@ func TestTemplateManager(t *testing.T) {
 	}
 
 	result, err := templateManager.Execute("test", dataObj)
-	if err != nil {
-		t.Fatalf("Error occured %t", err)
-	}
+	require.NoError(t, err)
 
-	if result != expectedResult {
-		fmt.Println(result)
-		t.Fatal("Expected: ", expectedResult, " - Got: ", result)
-	}
+	assert.Equal(t, expectedResult, result)
 }

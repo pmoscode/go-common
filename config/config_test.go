@@ -1,8 +1,10 @@
 package config
 
 import (
-	"log"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type TestConfigSimpleData struct {
@@ -44,20 +46,15 @@ func TestResolveTagsSimple(t *testing.T) {
 	testData := TestConfigSimpleData{}
 
 	err := LoadFromEnvironment(&testData)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	log.Printf("%+v", testData)
-
-	driveTest(1, t, testData.GmdDataStr == "Everything", "Everything", testData.GmdDataStr)
-	driveTest(2, t, testData.ButtDataStr1 == "Karl Ranseier", "Karl Ranseier", testData.ButtDataStr1)
-	driveTest(3, t, testData.ButtDataStr2 == "ist tot", "ist tot", testData.ButtDataStr2)
-	driveTest(4, t, testData.GmdDataInt == 42, 42, testData.GmdDataInt)
-
-	driveTest(5, t, len(testData.GmdDataMap1) == 3, 3, len(testData.GmdDataMap1))
-	driveTest(6, t, len(testData.GmdDataMap2) == 4, 4, len(testData.GmdDataMap2))
-	driveTest(7, t, len(testData.GmdDataMap3) == 2, 2, len(testData.GmdDataMap3))
+	assert.Equal(t, "Everything", testData.GmdDataStr)
+	assert.Equal(t, "Karl Ranseier", testData.ButtDataStr1)
+	assert.Equal(t, "ist tot", testData.ButtDataStr2)
+	assert.Equal(t, 42, testData.GmdDataInt)
+	assert.Len(t, testData.GmdDataMap1, 3)
+	assert.Len(t, testData.GmdDataMap2, 4)
+	assert.Len(t, testData.GmdDataMap3, 2)
 }
 
 func TestResolveTagsComplex(t *testing.T) {
@@ -76,25 +73,14 @@ func TestResolveTagsComplex(t *testing.T) {
 	testData := TestConfigComplexData{}
 
 	err := LoadFromEnvironment(&testData)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	log.Printf("%+v", testData)
-
-	driveTest(1, t, testData.GmdDataStr == "default string", "default string", testData.GmdDataStr)
-	driveTest(2, t, testData.ButtDataStr1 == "Karl Ranseier", "Karl Ranseier", testData.ButtDataStr1)
-	driveTest(3, t, testData.ButtDataStr2 == "ist tot", "ist tot", testData.ButtDataStr2)
-	driveTest(4, t, testData.GmdDataInt == 42, 42, testData.GmdDataInt)
-	driveTest(5, t, testData.GmdNoDataInt == 0, 0, testData.GmdNoDataInt)
-	driveTest(6, t, testData.GmdData3 == "no prefix", "no prefix", testData.GmdData3)
-
-	driveTest(7, t, len(testData.GmdDataMap1) == 3, 3, len(testData.GmdDataMap1))
-	driveTest(8, t, len(testData.GmdDataMap2) == 4, 4, len(testData.GmdDataMap2))
-}
-
-func driveTest(testLine int, t *testing.T, condition bool, expectedValue any, actualValue any) {
-	if !condition {
-		t.Fatalf("expected '%v' for test-line '%d', but got '%v'!", expectedValue, testLine, actualValue)
-	}
+	assert.Equal(t, "default string", testData.GmdDataStr)
+	assert.Equal(t, "Karl Ranseier", testData.ButtDataStr1)
+	assert.Equal(t, "ist tot", testData.ButtDataStr2)
+	assert.Equal(t, 42, testData.GmdDataInt)
+	assert.Equal(t, 0, testData.GmdNoDataInt)
+	assert.Equal(t, "no prefix", testData.GmdData3)
+	assert.Len(t, testData.GmdDataMap1, 3)
+	assert.Len(t, testData.GmdDataMap2, 4)
 }

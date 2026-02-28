@@ -1,8 +1,9 @@
 package strings
 
 import (
-	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPrettyPrintJson(t *testing.T) {
@@ -14,17 +15,14 @@ func TestPrettyPrintJson(t *testing.T) {
 		Key1: "val1",
 		Key2: "val2",
 		Key3: "val3",
-	} //"{\"key1\":\"val1\",\"key2\":\"val2\",\"key3\":\"val3\"}"
+	}
 
 	result := PrettyPrintJson(testObj)
-
 	lines := countRune(result, '\n') + 1
 
-	if lines != 5 {
-		fmt.Println(result)
-		t.Fatal("Line count mismatch: ", lines, " should be ", 5)
-	}
+	assert.Equal(t, 5, lines, "JSON pretty print should produce 5 lines")
 }
+
 func TestPrettyPrintYaml(t *testing.T) {
 	testObj := struct {
 		Key1 string
@@ -37,13 +35,9 @@ func TestPrettyPrintYaml(t *testing.T) {
 	}
 
 	result := PrettyPrintYaml(testObj)
-
 	lines := countRune(result, '\n')
 
-	if lines != 2 {
-		fmt.Println(result)
-		t.Fatal("Line count mismatch: ", lines, " should be ", 2)
-	}
+	assert.Equal(t, 2, lines, "YAML pretty print should produce 2 newlines")
 }
 
 func countRune(s string, r rune) int {
