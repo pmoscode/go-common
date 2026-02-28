@@ -4,8 +4,10 @@ package yamlconfig
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"os"
+	"path/filepath"
+
+	"gopkg.in/yaml.v3"
 )
 
 // LoadConfig loads a yaml config file into a given struct.
@@ -25,7 +27,7 @@ func LoadConfig(filename string, out interface{}) error {
 }
 
 func loadYaml(filename string) ([]byte, error) {
-	yamlFile, err := os.ReadFile(filename)
+	yamlFile, err := os.ReadFile(filepath.Clean(filename))
 	if err != nil {
 		fmt.Printf("Error reading YAML file: %s\n", err)
 		return nil, err

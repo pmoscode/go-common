@@ -1,5 +1,9 @@
 // Package templates provides a manager, which can handle different templates of one data structure.
 // So, it is ensured, that every template gets the same data structure (aka struct).
+//
+// WARNING: This package uses "text/template" which does NOT perform any HTML escaping.
+// Do NOT use this package to generate HTML output, as it may be vulnerable to Cross-Site Scripting (XSS).
+// If you need to render HTML, use "html/template" from the standard library instead.
 package templates
 
 import (

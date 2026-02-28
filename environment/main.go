@@ -77,7 +77,7 @@ func GetEnvFloat64(key string, defaultVal float64) float64 {
 		if err == nil {
 			return floatValue
 		} else {
-			fmt.Printf("Could not parse '%s' for key '%s' as float64! Returning default value: '%f'\n", value, key, defaultVal)
+			fmt.Printf("Could not parse value for key '%s' as float64! Returning default value: '%f'\n", key, defaultVal)
 		}
 	} else {
 		fmt.Printf("Nothing found for key '%s'. Using default value: '%f'\n", key, defaultVal)

@@ -3,8 +3,10 @@ package formats
 import (
 	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"os"
+	"path/filepath"
+
+	"gopkg.in/yaml.v3"
 )
 
 type Parser func(in []byte, out any) error
@@ -19,7 +21,7 @@ func parseConfig(filename string, out any, parser Parser) error {
 }
 
 func loadConfigFile(filename string) ([]byte, error) {
-	configFile, err := os.ReadFile(filename)
+	configFile, err := os.ReadFile(filepath.Clean(filename))
 	if err != nil {
 		//lint:ignore ST1005 this is a formatted error
 		return nil, fmt.Errorf("error reading config file: %s\n", err)

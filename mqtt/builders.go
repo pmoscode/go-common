@@ -4,9 +4,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"os"
+
+	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 // protocol defines the target connection protocol
@@ -90,6 +91,9 @@ func (b *Broker) WithSkipVerification() *Broker {
 }
 
 // WithUsernameAndPassword defines the username and password, if the broker requires authentication.
+//
+// NOTE: Credentials are stored in plain text in memory. Ensure that the Broker struct or its
+// string representation is never logged or exposed in error messages to avoid leaking secrets.
 func (b *Broker) WithUsernameAndPassword(username, password string) *Broker {
 	b.username = username
 	b.password = password
