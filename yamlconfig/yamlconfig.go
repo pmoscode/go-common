@@ -1,5 +1,6 @@
 // Package yamlconfig provides functions to load yaml configs from a file into a struct.
-// Deprecated Use config module instead
+//
+// Deprecated: Use the config package with [config/formats.ParseYamlConfig] instead.
 package yamlconfig
 
 import (
@@ -11,7 +12,8 @@ import (
 )
 
 // LoadConfig loads a yaml config file into a given struct.
-// Deprecated use [.formats.ParseConfig] instead
+//
+// Deprecated: Use [config/formats.ParseYamlConfig] instead.
 func LoadConfig(filename string, out interface{}) error {
 	yamlFileData, err := loadYaml(filename)
 	if err != nil {
@@ -29,8 +31,7 @@ func LoadConfig(filename string, out interface{}) error {
 func loadYaml(filename string) ([]byte, error) {
 	yamlFile, err := os.ReadFile(filepath.Clean(filename))
 	if err != nil {
-		fmt.Printf("Error reading YAML file: %s\n", err)
-		return nil, err
+		return nil, fmt.Errorf("error reading YAML file: %w", err)
 	}
 
 	return yamlFile, nil
@@ -39,8 +40,7 @@ func loadYaml(filename string) ([]byte, error) {
 func parseYaml(yamlFileData []byte, out interface{}) error {
 	err := yaml.Unmarshal(yamlFileData, out)
 	if err != nil {
-		fmt.Printf("Error parsing YAML file: %s\n", err)
-		return err
+		return fmt.Errorf("error parsing YAML file: %w", err)
 	}
 
 	return nil
