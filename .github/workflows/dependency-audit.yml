@@ -1,0 +1,51 @@
+name: Dependency Audit
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - 'main'
+  schedule:
+    # Run weekly on Monday at 06:00 UTC
+    - cron: '0 6 * * 1'
+
+jobs:
+  govulncheck:
+    name: Check for known vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: './go.mod'
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run govulncheck
+        run: govulncheck ./...
+
+  go-mod-tidy:
+    name: Verify go.mod / go.sum are tidy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: './go.mod'
+
+      - name: Run go mod tidy
+        run: go mod tidy
+
+      - name: Check for uncommitted changes
+        run: |
+          if [ -n "$(git status --porcelain go.mod go.sum)" ]; then
+            echo "::error::go.mod or go.sum are not tidy. Run 'go mod tidy' and commit the changes."
+            git diff go.mod go.sum
+            exit 1
+          fi
+
