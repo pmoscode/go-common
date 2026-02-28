@@ -13,8 +13,6 @@ type Parameter[T any] struct {
 	usage        string
 	DefaultValue T
 	envVarName   string
-	setCli       bool
-	setEnv       bool
 	value        *T
 	envGetFunc   func(key string, defaultVal T) T
 }
@@ -57,8 +55,6 @@ func NewParameter[T any](name string, defaultValue T, usage, envVarName string) 
 		DefaultValue: defaultValue,
 		usage:        usage,
 		envVarName:   envVarName,
-		setCli:       false,
-		setEnv:       false,
 		value:        new(T),
 	}
 }
