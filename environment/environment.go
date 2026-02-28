@@ -2,7 +2,7 @@
 package environment
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -26,10 +26,10 @@ func GetEnvBool(key string, defaultVal bool) bool {
 		if err == nil {
 			return boolValue
 		} else {
-			fmt.Printf("Could not parse '%s' for key '%s' as bool! Returning default value: '%t'\n", value, key, defaultVal)
+			log.Printf("Could not parse value for key '%s' as bool! Returning default value: '%t'\n", key, defaultVal)
 		}
 	} else {
-		fmt.Printf("Nothing found for key '%s'. Using default value: '%t'\n", key, defaultVal)
+		log.Printf("Nothing found for key '%s'. Using default value: '%t'\n", key, defaultVal)
 	}
 
 	return defaultVal
@@ -43,10 +43,10 @@ func GetEnvInt(key string, defaultVal int) int {
 		if err == nil {
 			return intValue
 		} else {
-			fmt.Printf("Could not parse '%s' for key '%s' as int! Returning default value: '%d'\n", value, key, defaultVal)
+			log.Printf("Could not parse value for key '%s' as int! Returning default value: '%d'\n", key, defaultVal)
 		}
 	} else {
-		fmt.Printf("Nothing found for key '%s'. Using default value: '%d'\n", key, defaultVal)
+		log.Printf("Nothing found for key '%s'. Using default value: '%d'\n", key, defaultVal)
 	}
 
 	return defaultVal
@@ -60,10 +60,10 @@ func GetEnvFloat32(key string, defaultVal float32) float32 {
 		if err == nil {
 			return float32(floatValue)
 		} else {
-			fmt.Printf("Could not parse '%s' for key '%s' as float32! Returning default value: '%f'\n", value, key, defaultVal)
+			log.Printf("Could not parse value for key '%s' as float32! Returning default value: '%f'\n", key, defaultVal)
 		}
 	} else {
-		fmt.Printf("Nothing found for key '%s'. Using default value: '%f'\n", key, defaultVal)
+		log.Printf("Nothing found for key '%s'. Using default value: '%f'\n", key, defaultVal)
 	}
 
 	return defaultVal
@@ -77,10 +77,10 @@ func GetEnvFloat64(key string, defaultVal float64) float64 {
 		if err == nil {
 			return floatValue
 		} else {
-			fmt.Printf("Could not parse value for key '%s' as float64! Returning default value: '%f'\n", key, defaultVal)
+			log.Printf("Could not parse value for key '%s' as float64! Returning default value: '%f'\n", key, defaultVal)
 		}
 	} else {
-		fmt.Printf("Nothing found for key '%s'. Using default value: '%f'\n", key, defaultVal)
+		log.Printf("Nothing found for key '%s'. Using default value: '%f'\n", key, defaultVal)
 	}
 
 	return defaultVal
@@ -113,7 +113,7 @@ func GetEnvMap(prefix string, cutoffPrefix bool) map[string]string {
 
 func cleanKey(key, prefix string, cutoffPrefix bool) string {
 	if cutoffPrefix {
-		key = strings.TrimLeft(key, prefix)
+		key = strings.TrimPrefix(key, prefix)
 	}
 
 	return key
