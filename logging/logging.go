@@ -1,14 +1,23 @@
 package logging
 
 import (
-	"github.com/pmoscode/go-common/process"
 	"os"
+
+	"github.com/pmoscode/go-common/process"
 )
 
+// NewLogger creates a new Logger instance with the given options.
+// Options can be used to customize the logger (e.g. name, severity, writer).
 func NewLogger(options ...func(*Logger)) *Logger {
 	logWriter := os.Stderr
+
+	name, err := process.GetExecutableName()
+	if err != nil {
+		name = "unknown"
+	}
+
 	logger := &Logger{
-		name:            process.GetExecutableName(),
+		name:            name,
 		debug:           false,
 		trace:           false,
 		extend:          "",
