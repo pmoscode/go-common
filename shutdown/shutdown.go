@@ -2,7 +2,7 @@
 package shutdown
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"sync"
@@ -37,7 +37,7 @@ func (o *observerSingle) AddCommand(fn ObserverFunc) {
 // hookOnSigTerm Internal function, which hooks on the SigTerm (15).
 // Will be automatically executed on first call to GetObserver.
 func (o *observerSingle) hookOnSigTerm() {
-	channel := make(chan os.Signal)
+	channel := make(chan os.Signal, 1)
 	//lint:ignore SA1017 Kill code 15 should always lead to the final execution of provided functions
 	signal.Notify(channel, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -56,7 +56,7 @@ func (o *observerSingle) executeCommands() (int, int) {
 	for _, command := range o.functions {
 		err := command()
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			failed++
 		} else {
 			success++
@@ -90,18 +90,18 @@ func Exit(exitCode int) {
 func ExitOnPanic() {
 	if r := recover(); r != nil {
 		finalize("Panic shutdown hooks")
-		fmt.Println("Printing panic cause: \n", r)
+		log.Println("Printing panic cause: \n", r)
 	}
 }
 
 // finalize Prints the final log. Counts the failed and succeeded function executions
 func finalize(title string) {
 	if observerSingleton != nil {
-		fmt.Println("########## ", title)
+		log.Println("########## ", title)
 		success, failed := observerSingleton.executeCommands()
-		fmt.Println("######## Executed ", success+failed, " shutdown commands")
-		fmt.Println("######## Succeeded: ", success)
-		fmt.Println("######## Failed: ", failed)
-		fmt.Println("##########")
+		log.Println("######## Executed ", success+failed, " shutdown commands")
+		log.Println("######## Succeeded: ", success)
+		log.Println("######## Failed: ", failed)
+		log.Println("##########")
 	}
 }
