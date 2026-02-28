@@ -38,7 +38,7 @@ func (o *observerSingle) AddCommand(fn ObserverFunc) {
 // Will be automatically executed on first call to GetObserver.
 func (o *observerSingle) hookOnSigTerm() {
 	channel := make(chan os.Signal, 1)
-	//lint:ignore SA1017 Kill code 15 should always lead to the final execution of provided functions
+	//nolint:govet // SA1017: intentional – SIGTERM must always trigger graceful shutdown hooks
 	signal.Notify(channel, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-channel

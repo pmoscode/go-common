@@ -23,8 +23,7 @@ func parseConfig(filename string, out any, parser Parser) error {
 func loadConfigFile(filename string) ([]byte, error) {
 	configFile, err := os.ReadFile(filepath.Clean(filename))
 	if err != nil {
-		//lint:ignore ST1005 this is a formatted error
-		return nil, fmt.Errorf("error reading config file: %s\n", err)
+		return nil, fmt.Errorf("reading config file: %w", err)
 	}
 
 	return configFile, nil

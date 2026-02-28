@@ -1,6 +1,7 @@
 package filesystem
 
 import (
+	"log"
 	"os"
 	"testing"
 
@@ -10,7 +11,12 @@ import (
 
 func TestFileExists(t *testing.T) {
 	file := createTempFile(t)
-	defer os.Remove(file)
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+			log.Printf("could not remove temp file: %s, error: %v", name, err)
+		}
+	}(file)
 
 	assert.True(t, FileExists(file), "expected file to exist: %s", file)
 }
@@ -25,7 +31,12 @@ func createTempFile(t *testing.T) string {
 	t.Helper()
 	f, err := os.CreateTemp("./", "temp-*.txt")
 	require.NoError(t, err, "could not create temp file")
-	defer f.Close()
+	defer func(f *os.File) {
+		err = f.Close()
+		if err != nil {
+			log.Printf("could not close temp file: %s, error: %v", f.Name(), err)
+		}
+	}(f)
 
 	return f.Name()
 }
