@@ -6,6 +6,11 @@ tasks:
     cmds:
       - go get -u ./...
 
+  tidy:
+    desc: Run go mod tidy and verify clean state
+    cmds:
+      - go mod tidy
+
   test:
     desc: Run go tests
     cmd: go test ./... --benchmem
@@ -14,6 +19,36 @@ tasks:
     desc: Run go tests in verbose mode
     cmd: go test ./... -v --benchmem
 
+  test-cover:
+    desc: Run go tests with coverage report
+    cmds:
+      - go test -coverprofile=coverage.out ./...
+      - go tool cover -func=coverage.out
+      - go tool cover -html=coverage.out -o coverage.html
+      - echo "Coverage report written to coverage.html"
+
   check:
     desc: Run a staticcheck (staticcheck must be installed -> https://staticcheck.dev/docs/getting-started/)
     cmd: staticcheck -tests=false ./...
+
+  lint:
+    desc: Run golangci-lint (golangci-lint must be installed -> https://golangci-lint.run/welcome/install/)
+    cmd: golangci-lint run ./...
+
+  vulncheck:
+    desc: Check for known vulnerabilities (govulncheck must be installed -> go install golang.org/x/vuln/cmd/govulncheck@latest)
+    cmd: govulncheck ./...
+
+  changelog:
+    desc: Generate CHANGELOG.md from git history (git-cliff must be installed -> https://git-cliff.org/docs/installation)
+    cmd: git-cliff -o CHANGELOG.md
+
+  ci:
+    desc: Run all CI checks locally (test, staticcheck, golangci-lint, govulncheck, tidy)
+    cmds:
+      - task: tidy
+      - task: test
+      - task: check
+      - task: lint
+      - task: vulncheck
+
