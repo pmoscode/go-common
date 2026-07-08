@@ -289,6 +289,7 @@ func (c *mockClient) OptionsReader() mqtt.ClientOptionsReader {
 
 type mockToken struct {
 	cntWait int
+	//lint:ignore U1000 field is intentionally unused; future use possible
 	//nolint:unused // future use possible
 	cntError int
 	complete chan struct{}

@@ -109,7 +109,8 @@ func TestLoadFromEnvironmentBoolField(t *testing.T) {
 }
 
 type unexportedFieldConfig struct {
-	Public  string `env:"name=PUB_VAL"`
+	Public string `env:"name=PUB_VAL"`
+	//lint:ignore U1000 unexported field is intentionally unused; test for unexported field handling
 	private string `env:"name=PRIV_VAL"` //nolint:unused // test for unexported field handling
 }
 
