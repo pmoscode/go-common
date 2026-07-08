@@ -11,7 +11,7 @@ import (
 // It also returns false, if the file is a directory.
 func FileExists(filename string) bool {
 	stat, err := os.Stat(filepath.Clean(filename))
-	if os.IsNotExist(err) {
+	if err != nil {
 		return false
 	}
 

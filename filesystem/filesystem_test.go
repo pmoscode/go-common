@@ -27,6 +27,29 @@ func TestFileNotExists(t *testing.T) {
 	assert.False(t, FileExists(file), "file should not exist: %s", file)
 }
 
+// TestFileExistsPermissionDenied is a regression test for a bug where any
+// os.Stat error other than "not exist" (e.g. permission denied on a parent
+// directory) caused a nil-pointer panic because only os.IsNotExist(err) was
+// checked before dereferencing stat.
+func TestFileExistsPermissionDenied(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("running as root, permission checks don't apply")
+	}
+
+	dir := t.TempDir()
+	blockedFile := dir + "/inner/file.txt"
+
+	require.NoError(t, os.Mkdir(dir+"/inner", 0755))
+	require.NoError(t, os.Chmod(dir+"/inner", 0000))
+	defer func() {
+		_ = os.Chmod(dir+"/inner", 0755)
+	}()
+
+	assert.NotPanics(t, func() {
+		assert.False(t, FileExists(blockedFile))
+	})
+}
+
 func createTempFile(t *testing.T) string {
 	t.Helper()
 	f, err := os.CreateTemp("./", "temp-*.txt")

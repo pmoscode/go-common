@@ -9,16 +9,19 @@ import (
 )
 
 type tagTestStruct struct {
-	Named       string `env:"name=MY_VAR"`
-	WithSelf    string `env:"self"`
-	EmptyTag    string `env:""`
-	NoTag       string
-	Prefixed    string `env:"prefix=PRE"`
-	Cutoff      string `env:"prefix=CUT,cutoff"`
-	CutoffTrue  string `env:"prefix=CUT2,cutoff=true"`
-	CutoffFalse string `env:"prefix=CUT3,cutoff=false"`
-	WithDefault string `env:"name=DEF_VAR,default=hello"`
-	NameAndSelf string `env:"name=PRIORITY,self"`
+	Named          string `env:"name=MY_VAR"`
+	WithSelf       string `env:"self"`
+	EmptyTag       string `env:""`
+	NoTag          string
+	Prefixed       string `env:"prefix=PRE"`
+	Cutoff         string `env:"prefix=CUT,cutoff"`
+	CutoffTrue     string `env:"prefix=CUT2,cutoff=true"`
+	CutoffFalse    string `env:"prefix=CUT3,cutoff=false"`
+	WithDefault    string `env:"name=DEF_VAR,default=hello"`
+	NameAndSelf    string `env:"name=PRIORITY,self"`
+	NameNoValue    string `env:"name"`
+	DefaultNoValue string `env:"default"`
+	PrefixNoValue  string `env:"prefix"`
 }
 
 func fieldByName(name string) reflect.StructField {
@@ -39,6 +42,33 @@ func TestParseNoTag(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, found)
 	assert.Equal(t, Kind(None), tag.Kind())
+}
+
+// TestParseNameTagWithoutValue is a regression test for a bug where a tag key
+// without "=value" (e.g. `env:"name"` instead of `env:"name=X"`) caused an
+// index-out-of-range panic instead of returning an error.
+func TestParseNameTagWithoutValue(t *testing.T) {
+	tag := NewTagMeta()
+	assert.NotPanics(t, func() {
+		_, err := tag.Parse(fieldByName("NameNoValue"))
+		require.Error(t, err)
+	})
+}
+
+func TestParseDefaultTagWithoutValue(t *testing.T) {
+	tag := NewTagMeta()
+	assert.NotPanics(t, func() {
+		_, err := tag.Parse(fieldByName("DefaultNoValue"))
+		require.Error(t, err)
+	})
+}
+
+func TestParsePrefixTagWithoutValue(t *testing.T) {
+	tag := NewTagMeta()
+	assert.NotPanics(t, func() {
+		_, err := tag.Parse(fieldByName("PrefixNoValue"))
+		require.Error(t, err)
+	})
 }
 
 func TestParseNameTag(t *testing.T) {

@@ -5,7 +5,6 @@ package config
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -23,36 +22,55 @@ const (
 	JSON
 )
 
-var functions = []formats.Parser{yaml.Unmarshal, json.Unmarshal}
-
 // LoadFromFile loads config from a file with the given format parser.
 //
 //   - filename: Path + filename of the config file
 //   - target: target struct to load the config to (MUST be a pointer to a struct)
 //   - format: format type (YAML or JSON)
 func LoadFromFile(filename string, target any, format Format) error {
-	err := formats.ParseConfig(filename, target, functions[format])
+	parser, err := parserFor(format)
 	if err != nil {
+		return err
+	}
+
+	if err := formats.ParseConfig(filename, target, parser); err != nil {
 		return err
 	}
 
 	return LoadFromEnvironment(target)
 }
 
+// parserFor returns the formats.Parser for the given Format, or an error if the
+// format is unknown.
+func parserFor(format Format) (formats.Parser, error) {
+	switch format {
+	case YAML:
+		return yaml.Unmarshal, nil
+	case JSON:
+		return json.Unmarshal, nil
+	default:
+		return nil, fmt.Errorf("unsupported format: %v", format)
+	}
+}
+
 // LoadFromEnvironment loads environment data into the target struct.
 //
 // target must be a pointer, otherwise it will return an error.
 func LoadFromEnvironment(target any) error {
+	if target == nil {
+		return fmt.Errorf("target must be a valid pointer")
+	}
+
 	pointer := reflect.TypeOf(target)
 
-	if pointer.Kind() != reflect.Pointer || target == nil {
+	if pointer.Kind() != reflect.Pointer {
 		return fmt.Errorf("target must be a valid pointer")
 	}
 
 	typeOf := pointer.Elem()
 	valueOf := reflect.ValueOf(target).Elem()
 
-	for i := 0; i < typeOf.NumField(); i++ {
+	for i := range typeOf.NumField() {
 		field := typeOf.Field(i)
 
 		if !field.IsExported() {
@@ -89,7 +107,7 @@ func resolveField(field reflect.StructField, valueOf reflect.Value, fieldIndex i
 				return err
 			}
 		case meta.None:
-			return errors.New("misconfigured tag for field: " + field.Name)
+			return fmt.Errorf("misconfigured tag for field: %s", field.Name)
 		}
 	}
 
@@ -98,11 +116,7 @@ func resolveField(field reflect.StructField, valueOf reflect.Value, fieldIndex i
 
 func resolveNameTag(fieldType reflect.Type, element reflect.Value, metaTag *meta.Tag) error {
 	switch fieldType.Kind() {
-	case reflect.Int:
-		fallthrough
-	case reflect.Int32:
-		fallthrough
-	case reflect.Int64:
+	case reflect.Int, reflect.Int32, reflect.Int64:
 		val, err := metaTag.ValueAsInt()
 		if err != nil {
 			return err
@@ -117,7 +131,7 @@ func resolveNameTag(fieldType reflect.Type, element reflect.Value, metaTag *meta
 		}
 		element.SetBool(val)
 	default:
-		return errors.New("Invalid field type: " + fieldType.String())
+		return fmt.Errorf("invalid field type: %s", fieldType)
 	}
 
 	return nil
@@ -169,7 +183,7 @@ func resolvePrefixTagEnvItem(key string, value string, keyType reflect.Type, val
 		case reflect.Float64:
 			valueValue, err = getPrimitive(strconv.ParseFloat(value, 64))
 		default:
-			return fmt.Errorf("can't assign value to type %v", keyType.Kind())
+			return fmt.Errorf("can't assign value to type %v", valueElement.Kind())
 		}
 		if err != nil {
 			return err

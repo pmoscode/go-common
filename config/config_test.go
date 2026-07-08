@@ -96,6 +96,17 @@ func TestLoadFromEnvironmentNonPointer(t *testing.T) {
 	assert.Contains(t, err.Error(), "pointer")
 }
 
+// TestLoadFromEnvironmentNil is a regression test for a bug where passing nil
+// caused a nil-pointer panic in reflect.TypeOf(target).Kind() because the nil
+// check happened after dereferencing the (nil) reflect.Type.
+func TestLoadFromEnvironmentNil(t *testing.T) {
+	assert.NotPanics(t, func() {
+		err := LoadFromEnvironment(nil)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "pointer")
+	})
+}
+
 func TestLoadFromEnvironmentBoolField(t *testing.T) {
 	type Cfg struct {
 		Flag bool `env:"name=BOOL_CFG"`
@@ -207,4 +218,20 @@ func createTempConfigFile(t *testing.T, name, content string) string {
 	err := os.WriteFile(path, []byte(content), 0600)
 	require.NoError(t, err)
 	return path
+}
+
+// TestLoadFromFileInvalidFormat is a regression test for a bug where an out-of-range
+// Format value caused an index-out-of-range panic on the internal parser slice.
+func TestLoadFromFileInvalidFormat(t *testing.T) {
+	path := createTempConfigFile(t, "config.yaml", "host: test")
+
+	var cfg struct {
+		Host string `yaml:"host"`
+	}
+
+	assert.NotPanics(t, func() {
+		err := LoadFromFile(path, &cfg, Format(99))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "unsupported format")
+	})
 }

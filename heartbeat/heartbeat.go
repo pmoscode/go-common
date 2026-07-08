@@ -4,7 +4,7 @@ package heartbeat
 import (
 	"context"
 	"fmt"
-	"sync/atomic"
+	"sync"
 	"time"
 
 	"github.com/pmoscode/go-common/shutdown"
@@ -12,31 +12,45 @@ import (
 
 // HeartBeat Holds the function, timer and config.
 type HeartBeat struct {
-	interval   time.Duration
-	callback   func()
-	cancel     context.CancelFunc
-	noWait     bool
-	isFirstRun atomic.Bool
+	interval time.Duration
+	callback func()
+	noWait   bool
+
+	mu     sync.Mutex
+	cancel context.CancelFunc
 }
 
-// RunForever Starts the timer and blocks the current thread until the context is cancelled.
+// RunForever Starts the timer and blocks the current thread until the context is cancelled
+// or Stop() is called.
 func (b *HeartBeat) RunForever(ctx context.Context) {
-	b.Run(ctx)
-	<-ctx.Done()
+	ctx = b.setupContext(ctx)
+	b.beat(ctx)
 }
 
 // Run Starts the timer without blocking the current thread.
-// The heartbeat stops when the given context is cancelled.
+// The heartbeat stops when the given context is cancelled or Stop() is called.
 func (b *HeartBeat) Run(ctx context.Context) {
-	ctx, b.cancel = context.WithCancel(ctx)
+	ctx = b.setupContext(ctx)
 	go b.beat(ctx)
+}
+
+// setupContext derives a cancellable context and stores the cancel function so that
+// Stop() can terminate a running heartbeat regardless of whether it was started via
+// Run or RunForever. Safe for concurrent use.
+func (b *HeartBeat) setupContext(ctx context.Context) context.Context {
+	derived, cancel := context.WithCancel(ctx)
+
+	b.mu.Lock()
+	b.cancel = cancel
+	b.mu.Unlock()
+
+	return derived
 }
 
 // beat Implements the execution logic.
 // Behaves a little bit different, if the function should be executed immediately.
 func (b *HeartBeat) beat(ctx context.Context) {
 	if b.noWait {
-		b.isFirstRun.Store(true)
 		b.callback()
 	}
 
@@ -48,18 +62,19 @@ func (b *HeartBeat) beat(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if b.isFirstRun.Load() {
-				b.isFirstRun.Store(false)
-			}
 			b.callback()
 		}
 	}
 }
 
-// Stop cancels the heartbeat context. Safe to call multiple times.
+// Stop cancels the heartbeat context. Safe to call multiple times and concurrently.
 func (b *HeartBeat) Stop() error {
-	if b.cancel != nil {
-		b.cancel()
+	b.mu.Lock()
+	cancel := b.cancel
+	b.mu.Unlock()
+
+	if cancel != nil {
+		cancel()
 	}
 	return nil
 }

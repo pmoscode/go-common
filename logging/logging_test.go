@@ -3,6 +3,7 @@ package logging
 import (
 	"errors"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -146,4 +147,37 @@ func TestDebugAlsoEnablesInTraceMode(t *testing.T) {
 	log.Debug("debug in trace mode")
 
 	assert.Contains(t, builder.String(), "### debug in trace mode")
+}
+
+// TestErrorIncludesErrText is a regression test for a bug where Error/Fatal wrote
+// the error text via the global "log" package instead of the configured writer,
+// so it never showed up when the logger was redirected (e.g. to a file/buffer).
+func TestErrorIncludesErrText(t *testing.T) {
+	builder := new(strings.Builder)
+	writer := stringWriter{str: builder}
+
+	log := NewLogger(WithLogWriter(writer))
+	log.Error(errors.New("boom"), "something failed")
+
+	result := builder.String()
+	assert.Contains(t, result, "something failed")
+	assert.Contains(t, result, "boom")
+}
+
+// TestConcurrentLogging is a regression test for a data race on the underlying
+// writer when multiple goroutines log concurrently. Run with `go test -race`.
+func TestConcurrentLogging(t *testing.T) {
+	builder := new(strings.Builder)
+	writer := stringWriter{str: builder}
+	log := NewLogger(WithLogWriter(writer))
+
+	var wg sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
+		go func(n int) {
+			defer wg.Done()
+			log.Info("message %d", n)
+		}(i)
+	}
+	wg.Wait()
 }

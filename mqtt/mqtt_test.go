@@ -6,6 +6,7 @@ import (
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/pmoscode/go-common/shutdown"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -72,13 +73,26 @@ func TestPublish(t *testing.T) {
 func TestPublishNotConnected(t *testing.T) {
 	client := NewClient(WithClientId("test"))
 	// Should not panic, just log
-	client.Publish(&Message{Topic: "/test", Value: "hello"})
+	err := client.Publish(&Message{Topic: "/test", Value: "hello"})
+	require.NoError(t, err)
+}
+
+// TestDisconnectNotConnected is a regression test for a bug where calling
+// Disconnect() before Connect() caused a nil-interface panic because, unlike
+// Publish/Subscribe/LoopForever, Disconnect() did not check for a nil client.
+func TestDisconnectNotConnected(t *testing.T) {
+	client := NewClient(WithClientId("test"))
+	assert.NotPanics(t, func() {
+		err := client.Disconnect()
+		require.NoError(t, err)
+	})
 }
 
 func TestSubscribeNotConnected(t *testing.T) {
 	client := NewClient(WithClientId("test"))
 	// Should not panic, just log
-	client.Subscribe("/test", func(message Message) {})
+	err := client.Subscribe("/test", func(message Message) {})
+	require.NoError(t, err)
 }
 
 func TestLoopForeverNotConnected(t *testing.T) {
@@ -118,6 +132,38 @@ func TestLoopForeverCancellation(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		t.Fatal("LoopForever did not return after context cancellation")
 	}
+}
+
+// TestLoopForeverRegistersShutdownHookOnce is a regression test ensuring that
+// calling LoopForever multiple times on the same Client (e.g. as part of a
+// reconnect loop) only registers a single shutdown hook, instead of growing the
+// global shutdown observer's hook list unboundedly on every call.
+func TestLoopForeverRegistersShutdownHookOnce(t *testing.T) {
+	defer shutdown.ResetForTesting()
+
+	brokerOpt, err := NewBrokerBuilder().
+		WithHost("localhost").
+		WithPort(1883).
+		WithProtocol(MqttTcp).
+		Build()
+	require.NoError(t, err)
+
+	client := NewClient(WithClientId("test"), brokerOpt)
+
+	mockClientImpl := &mockClient{}
+	err = client.connect(mockClientImpl)
+	require.NoError(t, err)
+
+	for i := 0; i < 3; i++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		client.LoopForever(ctx)
+		cancel()
+	}
+
+	// registerShutdownHookOnce must have fired, guarding against duplicate registration.
+	client.registerShutdownHookOnce.Do(func() {
+		t.Fatal("expected registerShutdownHookOnce to already be triggered after LoopForever calls")
+	})
 }
 
 // --- Message tests ---

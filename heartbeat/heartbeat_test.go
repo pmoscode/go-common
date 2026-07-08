@@ -158,3 +158,32 @@ func TestCallbackStopsAfterCancel(t *testing.T) {
 	// After cancel, no more than 1 additional callback should have fired (race window)
 	assert.LessOrEqual(t, countAfterWait-countAtCancel, int32(1))
 }
+
+// TestRunForeverUnblocksOnStop is a regression test for a bug where RunForever
+// waited on the *outer* context passed by the caller, while Stop() only cancelled
+// the *inner* context derived internally by Run(). Calling Stop() (e.g. via a
+// shutdown hook) while RunForever was blocked with context.Background() used to
+// hang forever.
+func TestRunForeverUnblocksOnStop(t *testing.T) {
+	defer shutdown.ResetForTesting()
+
+	hb, err := New(20*time.Millisecond, func() {})
+	require.NoError(t, err)
+
+	done := make(chan struct{})
+	go func() {
+		hb.RunForever(context.Background())
+		close(done)
+	}()
+
+	// give RunForever a moment to start and register its cancel func
+	time.Sleep(50 * time.Millisecond)
+	require.NoError(t, hb.Stop())
+
+	select {
+	case <-done:
+		// RunForever returned after Stop(), as expected
+	case <-time.After(2 * time.Second):
+		t.Fatal("RunForever did not return after Stop() was called")
+	}
+}

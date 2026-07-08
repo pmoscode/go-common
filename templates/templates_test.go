@@ -1,7 +1,9 @@
 package templates
 
 import (
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"text/template"
 
@@ -109,4 +111,26 @@ func TestMultipleTemplates(t *testing.T) {
 	r2, err := mgr.Execute("farewell", d)
 	require.NoError(t, err)
 	assert.Equal(t, "Bye Bob", r2)
+}
+
+// TestConcurrentAccess is a regression test for a data race where AddTemplate/
+// OverwriteTemplate/Execute accessed the internal map without synchronization.
+// Run with `go test -race` to verify.
+func TestConcurrentAccess(t *testing.T) {
+	mgr := NewTemplateManager[data]()
+	require.NoError(t, mgr.AddTemplate("greet", "Hi {{ .One }}"))
+
+	var wg sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wg.Add(2)
+		go func(n int) {
+			defer wg.Done()
+			_ = mgr.OverwriteTemplate("greet", "Hi {{ .One }} #"+strconv.Itoa(n))
+		}(i)
+		go func() {
+			defer wg.Done()
+			_, _ = mgr.Execute("greet", &data{One: "Alice"})
+		}()
+	}
+	wg.Wait()
 }

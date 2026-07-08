@@ -21,7 +21,7 @@ const (
 )
 
 const (
-	Name = iota
+	Name Kind = iota
 	Prefix
 	None
 )
@@ -52,18 +52,27 @@ func (m *Tag) Parse(field reflect.StructField) (bool, error) {
 		}
 
 		for _, val := range strings.Split(tag, ",") {
-			items := strings.Split(val, "=")
+			items := strings.SplitN(val, "=", 2)
 
 			switch items[0] {
 			case nameTag:
+				if len(items) != 2 {
+					return true, fmt.Errorf("env tag %q: %q requires a value, e.g. %q", tag, nameTag, nameTag+"=X")
+				}
 				m.name = items[1]
 			case defaultTag:
+				if len(items) != 2 {
+					return true, fmt.Errorf("env tag %q: %q requires a value, e.g. %q", tag, defaultTag, defaultTag+"=X")
+				}
 				m.defaultValue = items[1]
 			case selfTag:
 				if m.name == "" {
 					m.name = strcase.ToScreamingSnake(field.Name)
 				}
 			case prefixTag:
+				if len(items) != 2 {
+					return true, fmt.Errorf("env tag %q: %q requires a value, e.g. %q", tag, prefixTag, prefixTag+"=X")
+				}
 				m.prefix = items[1]
 			case cutoffTag:
 				if len(items) == 2 {

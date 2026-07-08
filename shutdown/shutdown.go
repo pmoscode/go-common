@@ -15,6 +15,9 @@ var observerSingleton *observerSingle
 // Ensures, that observerSingleton is a real singleton
 var once sync.Once
 
+// osExit is a seam for tests to intercept process termination.
+var osExit = os.Exit
+
 // ObserverFunc Function signature for the function to execute
 type ObserverFunc func() error
 
@@ -25,12 +28,15 @@ type Observer interface {
 
 // observerSingle Struct, which holds the functions to execute.
 type observerSingle struct {
+	mu        sync.Mutex
 	functions []ObserverFunc
 }
 
 // AddCommand Adds a function, which will be executed on exit.
 // Must match ObserverFunc
 func (o *observerSingle) AddCommand(fn ObserverFunc) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
 	o.functions = append(o.functions, fn)
 }
 
@@ -43,17 +49,21 @@ func (o *observerSingle) hookOnSigTerm() {
 	go func() {
 		<-channel
 		finalize("Graceful shutdown hooks")
-		close(channel)
-		os.Exit(1)
+		osExit(1)
 	}()
 }
 
 // executeCommands main function, which executes the provided functions.
 // Prints the error, if the function return any.
 func (o *observerSingle) executeCommands() (int, int) {
+	o.mu.Lock()
+	functions := make([]ObserverFunc, len(o.functions))
+	copy(functions, o.functions)
+	o.mu.Unlock()
+
 	success := 0
 	failed := 0
-	for _, command := range o.functions {
+	for _, command := range functions {
 		err := command()
 		if err != nil {
 			log.Println(err)
@@ -83,7 +93,7 @@ func GetObserver() Observer {
 // Not on os.Exit
 func Exit(exitCode int) {
 	finalize("Shutdown hooks")
-	os.Exit(exitCode)
+	osExit(exitCode)
 }
 
 // ExitOnPanic This function can be called, when panic is caught. Call then this to exit gracefully.
@@ -91,6 +101,7 @@ func ExitOnPanic() {
 	if r := recover(); r != nil {
 		finalize("Panic shutdown hooks")
 		log.Println("Printing panic cause: \n", r)
+		osExit(1)
 	}
 }
 

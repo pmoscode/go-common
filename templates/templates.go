@@ -9,11 +9,16 @@ package templates
 import (
 	"bytes"
 	"fmt"
+	"sync"
 	"text/template"
 )
 
 // Manager holds the templates and the functions, which are applied on every template.
+//
+// Manager is safe for concurrent use: all access to the internal template map is
+// synchronized via an internal mutex.
 type Manager[T any] struct {
+	mu        sync.RWMutex
 	templates map[string]*template.Template
 	options   []func(t *template.Template) *template.Template
 }
@@ -31,7 +36,10 @@ func NewTemplateManager[T any](options ...func(t *template.Template) *template.T
 // If a template with a given name already exists, it won't be overwritten.
 // If you wish to overwrite the template use [Manager.OverwriteTemplate]
 func (m *Manager[T]) AddTemplate(templateName string, templateStr string) error {
+	m.mu.RLock()
 	_, ok := m.templates[templateName]
+	m.mu.RUnlock()
+
 	if !ok {
 		err := m.OverwriteTemplate(templateName, templateStr)
 		if err != nil {
@@ -59,7 +67,9 @@ func (m *Manager[T]) OverwriteTemplate(templateName string, templateStr string) 
 		return err
 	}
 
+	m.mu.Lock()
 	m.templates[templateName] = tmpl
+	m.mu.Unlock()
 
 	return nil
 }
@@ -67,7 +77,10 @@ func (m *Manager[T]) OverwriteTemplate(templateName string, templateStr string) 
 // Execute renders the template with the given name and data.
 // It returns the rendered string or an error.
 func (m *Manager[T]) Execute(templateName string, data *T) (string, error) {
+	m.mu.RLock()
 	templateObj, ok := m.templates[templateName]
+	m.mu.RUnlock()
+
 	if !ok {
 		return "", fmt.Errorf("template '%s' does not exist", templateName)
 	}

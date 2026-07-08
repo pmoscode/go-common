@@ -3,7 +3,7 @@ package logging
 import (
 	"fmt"
 	"io"
-	"log"
+	"sync"
 	"time"
 
 	"github.com/pmoscode/go-common/shutdown"
@@ -24,6 +24,9 @@ const (
 )
 
 // Logger provides structured logging with configurable severity levels, name spacing, and output writer.
+//
+// Logger is safe for concurrent use: all writes to the underlying io.Writer are
+// serialized via an internal mutex.
 type Logger struct {
 	name            string
 	nameSpacing     int
@@ -31,7 +34,9 @@ type Logger struct {
 	extend          string
 	debug           bool
 	trace           bool
-	writer          io.Writer
+
+	mu     sync.Mutex
+	writer io.Writer
 }
 
 // Info logs a message with INFO severity.
@@ -58,26 +63,25 @@ func (l *Logger) Trace(format string, params ...any) {
 	}
 }
 
-// Error logs a message with ERROR severity and prints the error if not nil.
+// Error logs a message with ERROR severity and appends the error (if not nil) to the
+// same log line, written through the configured writer.
 func (l *Logger) Error(err error, format string, params ...any) {
-	l.log("ERROR", format, params...)
 	if err != nil {
-		log.Println(err)
+		l.log("ERROR", format+": %v", append(params, err)...)
+		return
 	}
+	l.log("ERROR", format, params...)
 }
 
-// Fatal logs a message with ERROR severity, prints the error if not nil, and exits the application.
+// Fatal logs a message with ERROR severity, appends the error (if not nil), and exits the application.
 func (l *Logger) Fatal(err error, format string, params ...any) {
-	l.log("ERROR", format, params...)
-	if err != nil {
-		log.Println(err)
-	}
+	l.Error(err, format, params...)
 	shutdown.Exit(1)
 }
 
-// Panic logs a message with Panic severity and panics with the given error.
+// Panic logs a message with PANIC severity and panics with the given error.
 func (l *Logger) Panic(err error, format string, params ...any) {
-	l.log("Panic", format, params...)
+	l.log("PANIC", format, params...)
 	panic(err)
 }
 
@@ -85,6 +89,16 @@ func (l *Logger) log(severity string, format string, params ...any) {
 	entry := fmt.Sprintf(format, params...)
 	dateStr := time.Now().Format("2006/01/02 15:04:05")
 	line := fmt.Sprintf("%s %s%s\n", dateStr, l.header(severity), entry)
+
+	l.writeLine(line)
+}
+
+// writeLine writes a single, already-formatted line to the underlying writer.
+// It serializes access via the logger's mutex so that Logger is safe for
+// concurrent use even with non-atomic writers (e.g. bytes.Buffer, files).
+func (l *Logger) writeLine(line string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 
 	_, err := l.writer.Write([]byte(line))
 	if err != nil {
