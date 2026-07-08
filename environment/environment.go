@@ -100,9 +100,8 @@ func GetEnvMap(prefix string, cutoffPrefix bool) map[string]string {
 
 	for _, env := range allEnv {
 		if strings.HasPrefix(env, calcPrefix) {
-			split := strings.Split(env, "=")
-			key := cleanKey(split[0], calcPrefix, cutoffPrefix)
-			value := split[1]
+			rawKey, value, _ := strings.Cut(env, "=")
+			key := cleanKey(rawKey, calcPrefix, cutoffPrefix)
 
 			envMap[key] = value
 		}

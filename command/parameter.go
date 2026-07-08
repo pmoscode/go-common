@@ -22,7 +22,7 @@ func (e *Parameter) String() string {
 		}
 	}
 
-	params := strings.Trim(fmt.Sprintf("%s", paramsMasked), "[]")
+	params := strings.Join(paramsMasked, " ")
 
 	return fmt.Sprintf("%s %s", e.command, params)
 }

@@ -118,6 +118,10 @@ func (b *Broker) Build() (Option, error) {
 		}
 	}
 
+	if (b.username != "" || b.password != "") && !b.tlsConfigured {
+		log.Println("WARNING: Username/password are configured without TLS. Credentials will be transmitted in plain text over the network!")
+	}
+
 	return func(options *pahoMqtt.ClientOptions) {
 		if b.username != "" || b.password != "" {
 			options.SetUsername(b.username)
@@ -148,10 +152,9 @@ func (b *Broker) buildTLSConfig() (*tls.Config, error) {
 
 	tlsConfig := &tls.Config{
 		RootCAs:            certPool,
-		ClientAuth:         tls.NoClientCert,
-		ClientCAs:          nil,
-		InsecureSkipVerify: b.skipVerification,
 		Certificates:       []tls.Certificate{clientKeyPair},
+		InsecureSkipVerify: b.skipVerification,
+		MinVersion:         tls.VersionTLS12,
 	}
 	return tlsConfig, nil
 }
@@ -172,15 +175,8 @@ func (b *Broker) adjustProtocolToSecure() {
 //   - TLS connection
 func NewBrokerBuilder() *Broker {
 	return &Broker{
-		host:             "localhost",
-		port:             1880,
-		protocol:         MqttTcp,
-		caPemPath:        "",
-		clientCrtPath:    "",
-		clientKeyPath:    "",
-		username:         "",
-		password:         "",
-		skipVerification: false,
-		tlsConfigured:    false,
+		host:     "localhost",
+		port:     1880,
+		protocol: MqttTcp,
 	}
 }

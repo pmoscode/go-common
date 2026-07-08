@@ -3,6 +3,7 @@ package mqtt
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 )
 
 // Message defines the default message which is received and sent by the mqtt client.
@@ -15,9 +16,15 @@ type Message struct {
 }
 
 // FromJson converts a JSON struct to a string.
+//
+// If Value cannot be marshalled to JSON (e.g. it contains a channel, function, or
+// cyclic reference), a non-JSON fallback ("%v"-formatted) is returned instead and
+// the error is logged. Callers that need to detect this case should marshal
+// Value themselves beforehand.
 func (m Message) FromJson() string {
 	marshal, err := json.Marshal(m.Value)
 	if err != nil {
+		log.Printf("could not marshal message value to JSON, falling back to %%v format: %v", err)
 		return fmt.Sprintf("%v", m.Value)
 	}
 	return string(marshal)

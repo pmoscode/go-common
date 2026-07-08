@@ -50,3 +50,14 @@ func TestEnvMap(t *testing.T) {
 
 	assert.Len(t, envMap, 3)
 }
+
+// TestEnvMapValueWithEqualSign is a regression test for a bug where values
+// containing an "=" character (e.g. base64, connection strings, JWTs) were
+// truncated because GetEnvMap used strings.Split instead of strings.Cut.
+func TestEnvMapValueWithEqualSign(t *testing.T) {
+	t.Setenv("PFX_KEY", "part1=part2=part3")
+
+	envMap := GetEnvMap("PFX", true)
+
+	assert.Equal(t, "part1=part2=part3", envMap["KEY"])
+}

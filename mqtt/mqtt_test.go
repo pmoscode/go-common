@@ -2,6 +2,17 @@ package mqtt
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"log"
+	"math/big"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -275,6 +286,40 @@ func TestBrokerBuilderTlsBuildFailsWithBadCert(t *testing.T) {
 	assert.Contains(t, err.Error(), "could not read CA certificate")
 }
 
+// TestBrokerBuilderTlsMinVersion is a regression test ensuring the TLS config
+// enforces a minimum TLS version instead of relying on the Go default.
+func TestBrokerBuilderTlsMinVersion(t *testing.T) {
+	caPemPath, crtPath, keyPath := selfSignedCertFiles(t)
+
+	b := NewBrokerBuilder().
+		WithHost("localhost").
+		WithPort(8883).
+		WithTlsCertificates(caPemPath, crtPath, keyPath)
+
+	tlsConfig, err := b.buildTLSConfig()
+	require.NoError(t, err)
+	assert.Equal(t, uint16(tls.VersionTLS12), tlsConfig.MinVersion)
+}
+
+// TestBrokerBuilderPlaintextCredentialsWarning is a regression test ensuring a
+// warning is logged when username/password are configured without TLS, since
+// credentials would otherwise be transmitted in plain text.
+func TestBrokerBuilderPlaintextCredentialsWarning(t *testing.T) {
+	var logOutput strings.Builder
+	log.SetOutput(&logOutput)
+	defer log.SetOutput(os.Stderr)
+
+	b := NewBrokerBuilder().
+		WithHost("localhost").
+		WithPort(1883).
+		WithProtocol(MqttTcp).
+		WithUsernameAndPassword("user", "pass")
+
+	_, err := b.Build()
+	require.NoError(t, err)
+	assert.Contains(t, logOutput.String(), "plain text")
+}
+
 func TestCreateClientDeprecated(t *testing.T) {
 	client := CreateClient("localhost", 1883, "test-id")
 	assert.NotNil(t, client)
@@ -358,4 +403,46 @@ func (t *mockToken) Done() <-chan struct{} {
 
 func (t *mockToken) Error() error {
 	return nil
+}
+
+// --- TLS test helpers ---
+
+// selfSignedCertFiles generates a throwaway self-signed certificate/key pair for
+// TLS-related tests and returns the paths to write to. Since buildTLSConfig only
+// parses the PEM data and does not verify a certificate chain, the same
+// self-signed certificate can be reused as both the "CA" and the client cert.
+func selfSignedCertFiles(t *testing.T) (caPemPath, crtPath, keyPath string) {
+	t.Helper()
+
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+
+	template := x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{CommonName: "go-common-test"},
+		NotBefore:             time.Now().Add(-time.Hour),
+		NotAfter:              time.Now().Add(time.Hour),
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+	}
+
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	require.NoError(t, err)
+
+	dir := t.TempDir()
+	crtPath = filepath.Join(dir, "cert.pem")
+	keyPath = filepath.Join(dir, "key.pem")
+
+	certOut, err := os.Create(crtPath)
+	require.NoError(t, err)
+	require.NoError(t, pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}))
+	require.NoError(t, certOut.Close())
+
+	keyOut, err := os.Create(keyPath)
+	require.NoError(t, err)
+	require.NoError(t, pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}))
+	require.NoError(t, keyOut.Close())
+
+	return crtPath, crtPath, keyPath
 }

@@ -64,6 +64,20 @@ func TestParameterStringEmpty(t *testing.T) {
 	assert.Equal(t, "ls ", result)
 }
 
+// TestParameterStringWithBrackets is a regression test for a bug where
+// Parameter.String() used strings.Trim(fmt.Sprintf("%s", slice), "[]") to join
+// parameter values, which incorrectly stripped literal "[" / "]" characters
+// from the actual parameter values themselves.
+func TestParameterStringWithBrackets(t *testing.T) {
+	params := NewParameters(
+		WithCommand("echo"),
+		WithValue("[onlyone]"),
+	)
+
+	result := params.String()
+	assert.Equal(t, "echo [onlyone]", result)
+}
+
 func TestWithCommand(t *testing.T) {
 	params := NewParameters(WithCommand("git"))
 

@@ -150,6 +150,8 @@ result := f.Filter(
 The heartbeat package is some kind of timer, which executes a given function at an interval.
 It supports `context.Context` for clean cancellation.
 It can be configured, if the first execution should start immediately or after the first interval.
+`Stop()` reliably cancels the heartbeat regardless of whether it was started via `Run` or
+`RunForever`, and is safe to call concurrently.
 
 ```go
 ctx, cancel := context.WithCancel(context.Background())
@@ -170,6 +172,7 @@ hb.Run(ctx)
 ### Logging
 The logging package is a simple logger, where you can configure the appearance of the log entry.
 You can also define the `io.Writer` for it.
+`Logger` is safe for concurrent use – all writes to the underlying `io.Writer` are serialized internally.
 
 Available options:
 - `WithName` – set the logger name
@@ -180,9 +183,14 @@ Available options:
 
 Structs can be logged in JSON or YAML format via `InfoStruct`.
 
+`Error`/`Fatal` include the passed error's text directly in the log line written through
+the configured writer (previously it was printed via the global `log` package and could
+end up on a different destination than the configured one).
+
 ### MQTT
 The mqtt package is a wrapper for the [Paho MQTT client](https://github.com/eclipse/paho.mqtt.golang).
 It simplifies the configuration and usage of publish and subscribe actions.
+`Client` is safe for concurrent use.
 
 The client supports TLS configuration via `NewBrokerBuilder` and clean shutdown via `context.Context`:
 
@@ -198,6 +206,11 @@ brokerOpt, err := mqtt.NewBrokerBuilder().
 
 client := mqtt.NewClient(mqtt.WithClientId("my-app"), brokerOpt)
 client.Connect()
+
+if err := client.Publish(&mqtt.Message{Topic: "topic", Value: "hello"}); err != nil {
+    log.Println("publish failed:", err)
+}
+
 client.LoopForever(ctx) // blocks until context is cancelled
 ```
 
@@ -219,6 +232,9 @@ shutdown.GetObserver().AddCommand(func() error {
 defer shutdown.ExitOnPanic()
 ```
 
+> **Note:** `ExitOnPanic()` runs all registered shutdown hooks and then terminates the
+> process (`os.Exit(1)`). It does not "swallow" the panic and let the program continue.
+
 ### Strings
 In this package you will find two functions:
 - `PrettyPrintJson` – pretty format any struct as JSON
@@ -228,6 +244,7 @@ In this package you will find two functions:
 This package contains a generic `TemplateManager`. The purpose is to make GO templates (via the GO templating engine)
 accessible via name. So called "named templates".
 Every template in this manager can be populated with defined options. Currently only with custom template functions.
+`Manager` is safe for concurrent use.
 
 > **Note:** This package uses `text/template` which does **not** perform HTML escaping.
 > Do not use it for HTML output. Use `html/template` from the standard library instead.
@@ -237,6 +254,44 @@ Every template in this manager can be populated with defined options. Currently 
 > **Deprecated:** Use the `config` package with `formats.ParseYamlConfig` instead.
 
 The yamlconfig package loads YAML config files into a given struct.
+
+## Breaking Changes
+
+### Unreleased
+
+A code review pass (see [FINDINGS.md](FINDINGS.md) for the full list) fixed several panics,
+data races and goroutine/connection leaks. Most fixes are drop-in and don't require any code
+changes. The following changes do affect the public API, though:
+
+- **`mqtt.Client.Publish` / `mqtt.Client.Subscribe`** now return an `error` (previously no
+  return value), so that failed publishes/subscriptions are no longer silently swallowed.
+  Calls that ignore the return value keep compiling as-is:
+  ```go
+  // still compiles, error is just ignored
+  client.Publish(msg)
+
+  // recommended
+  if err := client.Publish(msg); err != nil {
+      log.Println("publish failed:", err)
+  }
+  ```
+  This only breaks code that assigns these methods to a `func(*Message)`-typed variable, or
+  defines a custom interface requiring the old (return-value-less) signature.
+
+- **`config/meta.Kind`** constants (`Name`, `Prefix`, `None`) are now typed as `Kind` instead
+  of untyped `int` constants. This only affects code that imports `config/meta` directly
+  (rather than the `config` package) and assigns these constants to a plain `int` variable –
+  such code now needs an explicit conversion, e.g. `int(meta.Name)`.
+
+- **`shutdown.ExitOnPanic()`** now actually terminates the process (`os.Exit(1)`) after running
+  the registered shutdown hooks, matching what its documentation always said. Previously it
+  silently recovered the panic and let the program continue running afterward. If your code
+  relied on that (undocumented, buggy) "recover and keep going" behavior, replace
+  `defer shutdown.ExitOnPanic()` with your own `recover()` handling.
+
+Since this module is still pre-1.0 (`v0.y.z`), these changes are shipped as a minor version
+bump rather than a new major version – per semver's rules for initial development, the public
+API of a `0.y.z` release is not guaranteed to be stable.
 
 ## Installation
 
