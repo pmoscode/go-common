@@ -68,10 +68,11 @@ func TestPublish(t *testing.T) {
 	err = client.connect(mockClientImpl)
 	require.NoError(t, err)
 
-	client.Publish(&Message{
+	err = client.Publish(&Message{
 		Topic: "/test/testMessage",
 		Value: "{'test': 2}",
 	})
+	require.NoError(t, err)
 
 	err = client.Disconnect()
 	require.NoError(t, err)
