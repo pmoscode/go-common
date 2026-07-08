@@ -41,7 +41,7 @@ tasks:
 
   changelog:
     desc: Generate CHANGELOG.md from git history (git-cliff must be installed -> https://git-cliff.org/docs/installation)
-    cmd: git-cliff -o CHANGELOG.md
+    cmd: git-cliff -vv -o CHANGELOG.md
 
   ci:
     desc: Run all CI checks locally (test, staticcheck, golangci-lint, govulncheck, tidy)

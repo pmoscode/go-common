@@ -28,6 +28,10 @@ All notable changes to this project will be documented in this file.
 - Add dependency audit workflow for vulnerability checks and go.mod verification
 - Update Go version to 1.26.0 and task version to 3.48.0 in configuration files
 - *(deps)* Update golangci/golangci-lint-action action to v9
+- Update .gitignore and add CHANGELOG.md with initial content and add git-cliff config
+- *(deps)* Update actions/checkout action to v7
+- Update module dependencies golang.org/x/net to v0.56.0 and golang.org/x/sync to v0.21.0
+- Bump Go version to 1.26.5 and update module dependencies golang.org/x/net to v0.56.0 and golang.org/x/sync to v0.21.0
 
 ### 🐛 Bug Fixes
 
@@ -45,13 +49,18 @@ All notable changes to this project will be documented in this file.
 
 ### 🔧 Refactoring
 
+- Remove export of internal variables
 - Update HeartBeat to use context for cancellation and atomic operations
 - Improve MQTT client implementation and error handling
 - Simplify staticcheck command in Taskfile.yaml for improved maintainability
 - Improve error handling and resource cleanup in file operations
+- Improve concurrency safety and error handling across multiple modules, add regression tests
+- Improve parameter formatting, TLS configuration, and error handling; add regression tests and README updates
+- Simplify filter return type, improve parameter handling, and enhance tests & documentation
 
 ### 🚀 Features
 
+- Update README.md
 - Add GH Action test pipeline
 - Implement CLI parameter manager with support for various types
 - Add config package for loading environment variables and file-based configurations
@@ -74,6 +83,8 @@ All notable changes to this project will be documented in this file.
 - Refactor tests to use testify assertions for improved readability
 - Refactor logging tests to use testify assertions for consistency and clarity
 - Add additional unit tests for all modules
+- Add lint comments for unused struct fields in config and mqtt tests
+- Add error assertion for Publish in mqtt_test
 
 ## [0.10.0] - 2024-07-11
 
@@ -81,15 +92,10 @@ All notable changes to this project will be documented in this file.
 
 - Update deps
 
-### 🔧 Refactoring
-
-- Remove export of internal variables
-
 ### 🚀 Features
 
 - Add func to get float env values
 - Add a basic cli manager
-- Update README.md
 
 ## [0.9.1] - 2024-07-10
 
