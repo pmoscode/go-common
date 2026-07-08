@@ -5,24 +5,42 @@ import (
 	"strings"
 )
 
+// argument represents a single command argument, together with whether it
+// should be masked (e.g. "***") when the Parameter is rendered as a string
+// for logging purposes.
+type argument struct {
+	value  string
+	masked bool
+}
+
+// Parameter holds a command and its arguments. Using a single []argument slice
+// (instead of two parallel slices for values and masks) makes it impossible for
+// the two to accidentally get out of sync.
 type Parameter struct {
 	command string
-	params  []string
-	mask    []bool
+	args    []argument
+}
+
+// values returns the raw (unmasked) argument values, in order, e.g. for passing
+// to exec.Command.
+func (e *Parameter) values() []string {
+	values := make([]string, len(e.args))
+	for i, a := range e.args {
+		values[i] = a.value
+	}
+	return values
 }
 
 func (e *Parameter) String() string {
-	paramsMasked := make([]string, len(e.params))
+	parts := make([]string, len(e.args))
 
-	for idx, param := range e.params {
-		if e.mask[idx] {
-			paramsMasked[idx] = "***"
+	for idx, a := range e.args {
+		if a.masked {
+			parts[idx] = "***"
 		} else {
-			paramsMasked[idx] = param
+			parts[idx] = a.value
 		}
 	}
 
-	params := strings.Join(paramsMasked, " ")
-
-	return fmt.Sprintf("%s %s", e.command, params)
+	return fmt.Sprintf("%s %s", e.command, strings.Join(parts, " "))
 }

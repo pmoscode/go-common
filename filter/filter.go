@@ -8,23 +8,20 @@ type Filter[T any] struct {
 
 // Filter executes the filter operation with the given filters functions.
 // Returns a slice of the matching items.
-func (f *Filter[T]) Filter(filters ...func(T) bool) *[]T {
-	filteredItems := make([]T, 0)
+func (f *Filter[T]) Filter(filters ...func(T) bool) []T {
+	filteredItems := make([]T, 0, len(f.items))
 
+outer:
 	for _, item := range f.items {
-		skip := false
-		for _, f := range filters {
-			if !f(*item) {
-				skip = true
-				break
+		for _, filterFn := range filters {
+			if !filterFn(*item) {
+				continue outer
 			}
 		}
-		if !skip {
-			filteredItems = append(filteredItems, *item)
-		}
+		filteredItems = append(filteredItems, *item)
 	}
 
-	return &filteredItems
+	return filteredItems
 }
 
 // NewFilter creates a new filter with the given type and item slice.

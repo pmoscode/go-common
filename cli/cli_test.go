@@ -96,3 +96,55 @@ func TestSimpleMixedCli(t *testing.T) {
 	assert.True(t, *dryRun.GetValue())
 	assert.Equal(t, 32.5, *calc.GetValue())
 }
+
+func TestFloat32ParameterFromCli(t *testing.T) {
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+
+	os.Args = []string{"app", "--ratio", "3.25"}
+
+	ratio := NewParameter[float32]("ratio", 1.5, "", "APP_RATIO")
+
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+
+	mgr := New()
+	mgr.AddFloat32Parameter(ratio)
+	mgr.Parse()
+
+	assert.Equal(t, float32(3.25), *ratio.GetValue())
+}
+
+func TestFloat32ParameterFromEnv(t *testing.T) {
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+
+	os.Args = []string{"app"}
+	t.Setenv("APP_RATIO", "7.5")
+
+	ratio := NewParameter[float32]("ratio", 1.5, "", "APP_RATIO")
+
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+
+	mgr := New()
+	mgr.AddFloat32Parameter(ratio)
+	mgr.Parse()
+
+	assert.Equal(t, float32(7.5), *ratio.GetValue())
+}
+
+func TestFloat32ParameterDefault(t *testing.T) {
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+
+	os.Args = []string{"app"}
+
+	ratio := NewParameter[float32]("ratio", 1.5, "", "")
+
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+
+	mgr := New()
+	mgr.AddFloat32Parameter(ratio)
+	mgr.Parse()
+
+	assert.Equal(t, float32(1.5), *ratio.GetValue())
+}

@@ -1,8 +1,8 @@
 package command
 
 import (
+	"context"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 
@@ -17,15 +17,29 @@ type Command struct {
 
 // Execute runs the command defined in the given Parameter.
 //
+// It is equivalent to calling [Command.ExecuteContext] with [context.Background],
+// i.e. it does not support cancellation or a timeout. Use ExecuteContext directly
+// if you need to bound how long the external command may run.
+//
 // WARNING: This function passes the command and its parameters directly to exec.Command without any
 // validation or sanitization. The caller MUST ensure that all inputs are trusted and do not originate
 // from untrusted user input. Passing unsanitized input may lead to command injection vulnerabilities.
 func (c *Command) Execute(options *Parameter) error {
-	cmd := exec.Command(options.command, options.params...)
+	return c.ExecuteContext(context.Background(), options)
+}
+
+// ExecuteContext runs the command defined in the given Parameter, bound to the
+// given context. If ctx is cancelled or its deadline is exceeded while the
+// command is running, the underlying process is killed.
+//
+// WARNING: See [Command.Execute] for the same command-injection caveat regarding
+// unsanitized input.
+func (c *Command) ExecuteContext(ctx context.Context, options *Parameter) error {
+	cmd := exec.CommandContext(ctx, options.command, options.values()...)
 
 	if c.logger.IsDebug() {
-		cmd.Stdout = io.MultiWriter(os.Stdout)
-		cmd.Stderr = io.MultiWriter(os.Stderr)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 	}
 
 	c.logger.Info("Executing command: %s", options)

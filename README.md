@@ -140,10 +140,14 @@ This is a generic helper package to filter a slice. You provide one or more filt
 ```go
 items := []*MyStruct{ /* ... */ }
 f := filter.NewFilter(items)
-result := f.Filter(
+result := f.Filter( // result is []MyStruct
     func(val MyStruct) bool { return val.Age > 18 },
     func(val MyStruct) bool { return val.Active },
 )
+
+for _, item := range result {
+    fmt.Println(item)
+}
 ```
 
 ### Heartbeat
@@ -288,6 +292,18 @@ changes. The following changes do affect the public API, though:
   silently recovered the panic and let the program continue running afterward. If your code
   relied on that (undocumented, buggy) "recover and keep going" behavior, replace
   `defer shutdown.ExitOnPanic()` with your own `recover()` handling.
+
+- **`filter.Filter.Filter(...)`** now returns `[]T` instead of `*[]T` (an unnecessary pointer
+  to an already reference-like slice type). Update code that dereferences the result:
+  ```go
+  // before
+  result := f.Filter(...)
+  for _, item := range *result { ... }
+
+  // after
+  result := f.Filter(...)
+  for _, item := range result { ... }
+  ```
 
 Since this module is still pre-1.0 (`v0.y.z`), these changes are shipped as a minor version
 bump rather than a new major version – per semver's rules for initial development, the public

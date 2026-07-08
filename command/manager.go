@@ -5,6 +5,9 @@ import (
 )
 
 // Manager holds command parameters and provides a way to build and execute a command.
+//
+// Manager is NOT safe for concurrent use. Do not call AddParameter/ExecuteCommand
+// on the same instance from multiple goroutines without external synchronization.
 type Manager struct {
 	params []func(parameter *Parameter)
 	logger *logging.Logger

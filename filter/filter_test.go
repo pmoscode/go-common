@@ -15,8 +15,8 @@ func TestFilterSimple(t *testing.T) {
 		return val == "2"
 	})
 
-	assert.Len(t, *filtered, 1)
-	assert.Equal(t, "2", (*filtered)[0])
+	assert.Len(t, filtered, 1)
+	assert.Equal(t, "2", filtered[0])
 }
 
 type Complex struct {
@@ -38,8 +38,8 @@ func TestFilterComplex(t *testing.T) {
 		return val.Loc == 30
 	})
 
-	assert.Len(t, *filtered, 2)
-	assert.Equal(t, 30, (*filtered)[0].Loc)
+	assert.Len(t, filtered, 2)
+	assert.Equal(t, 30, filtered[0].Loc)
 }
 
 func TestMultipleFilterComplex(t *testing.T) {
@@ -58,6 +58,6 @@ func TestMultipleFilterComplex(t *testing.T) {
 		func(val Complex) bool { return val.Name == "Test 4" },
 	)
 
-	assert.Len(t, *filtered, 1)
-	assert.Equal(t, "Test 4", (*filtered)[0].Name)
+	assert.Len(t, filtered, 1)
+	assert.Equal(t, "Test 4", filtered[0].Name)
 }

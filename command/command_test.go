@@ -90,8 +90,8 @@ func TestWithParam(t *testing.T) {
 		WithParam("--version"),
 	)
 
-	assert.Equal(t, []string{"--version"}, params.params)
-	assert.Equal(t, []bool{false}, params.mask)
+	assert.Equal(t, []string{"--version"}, params.values())
+	assert.Equal(t, []argument{{value: "--version", masked: false}}, params.args)
 }
 
 func TestWithValue(t *testing.T) {
@@ -100,8 +100,8 @@ func TestWithValue(t *testing.T) {
 		WithValue("hello"),
 	)
 
-	assert.Equal(t, []string{"hello"}, params.params)
-	assert.Equal(t, []bool{false}, params.mask)
+	assert.Equal(t, []string{"hello"}, params.values())
+	assert.Equal(t, []argument{{value: "hello", masked: false}}, params.args)
 }
 
 func TestWithValueMasked(t *testing.T) {
@@ -110,8 +110,8 @@ func TestWithValueMasked(t *testing.T) {
 		WithValueMasked("secret"),
 	)
 
-	assert.Equal(t, []string{"secret"}, params.params)
-	assert.Equal(t, []bool{true}, params.mask)
+	assert.Equal(t, []string{"secret"}, params.values())
+	assert.Equal(t, []argument{{value: "secret", masked: true}}, params.args)
 }
 
 // --- Command tests ---
@@ -185,14 +185,14 @@ func TestNewParameters(t *testing.T) {
 	)
 
 	assert.Equal(t, "git", params.command)
-	assert.Equal(t, []string{"status"}, params.params)
+	assert.Equal(t, []string{"status"}, params.values())
 }
 
 func TestNewParametersEmpty(t *testing.T) {
 	params := NewParameters()
 
 	assert.Empty(t, params.command)
-	assert.Nil(t, params.params)
+	assert.Empty(t, params.values())
 }
 
 // --- Manager tests ---
@@ -251,8 +251,14 @@ func TestMultipleParamsWithMasking(t *testing.T) {
 	)
 
 	assert.Equal(t, "deploy", params.command)
-	assert.Equal(t, []string{"--env", "production", "--token", "abc123", "--verbose"}, params.params)
-	assert.Equal(t, []bool{false, false, false, true, false}, params.mask)
+	assert.Equal(t, []string{"--env", "production", "--token", "abc123", "--verbose"}, params.values())
+	assert.Equal(t, []argument{
+		{value: "--env", masked: false},
+		{value: "production", masked: false},
+		{value: "--token", masked: false},
+		{value: "abc123", masked: true},
+		{value: "--verbose", masked: false},
+	}, params.args)
 
 	str := params.String()
 	assert.Contains(t, str, "***")

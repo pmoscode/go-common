@@ -35,8 +35,9 @@ type Logger struct {
 	debug           bool
 	trace           bool
 
-	mu     sync.Mutex
-	writer io.Writer
+	mu          sync.Mutex
+	writer      io.Writer
+	headerCache map[string]string
 }
 
 // Info logs a message with INFO severity.
@@ -107,7 +108,21 @@ func (l *Logger) writeLine(line string) {
 }
 
 func (l *Logger) header(severity string) string {
-	return fmt.Sprintf("%-*s [%*s] %s ### ", l.severitySpacing, severity, l.nameSpacing, l.name, l.extend)
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if cached, ok := l.headerCache[severity]; ok {
+		return cached
+	}
+
+	if l.headerCache == nil {
+		l.headerCache = make(map[string]string)
+	}
+
+	computed := fmt.Sprintf("%-*s [%*s] %s ### ", l.severitySpacing, severity, l.nameSpacing, l.name, l.extend)
+	l.headerCache[severity] = computed
+
+	return computed
 }
 
 // IsDebug returns true if debug level logging is enabled.

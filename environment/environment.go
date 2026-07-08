@@ -18,72 +18,52 @@ func GetEnv(key string, defaultVal string) string {
 	return defaultVal
 }
 
+// getEnvParsed reads a string value from the environment with the given key and
+// parses it using the given parse function. If the key is not found or parsing
+// fails, the default value is returned (and the reason is logged).
+func getEnvParsed[T any](key string, defaultVal T, parse func(string) (T, error)) T {
+	value, exists := os.LookupEnv(key)
+	if !exists {
+		log.Printf("Nothing found for key '%s'. Using default value: '%v'\n", key, defaultVal)
+		return defaultVal
+	}
+
+	parsed, err := parse(value)
+	if err != nil {
+		log.Printf("Could not parse value for key '%s'! Returning default value: '%v'\n", key, defaultVal)
+		return defaultVal
+	}
+
+	return parsed
+}
+
 // GetEnvBool reads a string value from the environment with the given key and returns it as bool.
 // If the key is not found or is not a bool, the default value is returned.
 func GetEnvBool(key string, defaultVal bool) bool {
-	if value, exists := os.LookupEnv(key); exists {
-		boolValue, err := strconv.ParseBool(value)
-		if err == nil {
-			return boolValue
-		} else {
-			log.Printf("Could not parse value for key '%s' as bool! Returning default value: '%t'\n", key, defaultVal)
-		}
-	} else {
-		log.Printf("Nothing found for key '%s'. Using default value: '%t'\n", key, defaultVal)
-	}
-
-	return defaultVal
+	return getEnvParsed(key, defaultVal, strconv.ParseBool)
 }
 
 // GetEnvInt reads a string value from the environment with the given key and returns it as int.
 // If the key is not found or is not a int, the default value is returned.
 func GetEnvInt(key string, defaultVal int) int {
-	if value, exists := os.LookupEnv(key); exists {
-		intValue, err := strconv.Atoi(value)
-		if err == nil {
-			return intValue
-		} else {
-			log.Printf("Could not parse value for key '%s' as int! Returning default value: '%d'\n", key, defaultVal)
-		}
-	} else {
-		log.Printf("Nothing found for key '%s'. Using default value: '%d'\n", key, defaultVal)
-	}
-
-	return defaultVal
+	return getEnvParsed(key, defaultVal, strconv.Atoi)
 }
 
 // GetEnvFloat32 reads a string value from the environment with the given key and returns it as float32.
 // If the key is not found or is not a float32, the default value is returned.
 func GetEnvFloat32(key string, defaultVal float32) float32 {
-	if value, exists := os.LookupEnv(key); exists {
-		floatValue, err := strconv.ParseFloat(value, 32)
-		if err == nil {
-			return float32(floatValue)
-		} else {
-			log.Printf("Could not parse value for key '%s' as float32! Returning default value: '%f'\n", key, defaultVal)
-		}
-	} else {
-		log.Printf("Nothing found for key '%s'. Using default value: '%f'\n", key, defaultVal)
-	}
-
-	return defaultVal
+	return getEnvParsed(key, defaultVal, func(s string) (float32, error) {
+		v, err := strconv.ParseFloat(s, 32)
+		return float32(v), err
+	})
 }
 
 // GetEnvFloat64 reads a string value from the environment with the given key and returns it as float64.
 // If the key is not found or is not a float64, the default value is returned.
 func GetEnvFloat64(key string, defaultVal float64) float64 {
-	if value, exists := os.LookupEnv(key); exists {
-		floatValue, err := strconv.ParseFloat(value, 64)
-		if err == nil {
-			return floatValue
-		} else {
-			log.Printf("Could not parse value for key '%s' as float64! Returning default value: '%f'\n", key, defaultVal)
-		}
-	} else {
-		log.Printf("Nothing found for key '%s'. Using default value: '%f'\n", key, defaultVal)
-	}
-
-	return defaultVal
+	return getEnvParsed(key, defaultVal, func(s string) (float64, error) {
+		return strconv.ParseFloat(s, 64)
+	})
 }
 
 // GetEnvMap reads all environment variables with the given prefix. (CAUTION!! Auto attaches the "_" character!!)
@@ -99,20 +79,29 @@ func GetEnvMap(prefix string, cutoffPrefix bool) map[string]string {
 	}
 
 	for _, env := range allEnv {
-		if strings.HasPrefix(env, calcPrefix) {
-			rawKey, value, _ := strings.Cut(env, "=")
-			key := cleanKey(rawKey, calcPrefix, cutoffPrefix)
-
-			envMap[key] = value
+		if rawKey, value, ok := cutEnvEntry(env, calcPrefix); ok {
+			envMap[cleanKey(rawKey, calcPrefix, cutoffPrefix)] = value
 		}
 	}
 
 	return envMap
 }
 
+// cutEnvEntry splits a raw "KEY=VALUE" environment entry and reports whether the
+// key has the given prefix.
+func cutEnvEntry(env, prefix string) (key, value string, ok bool) {
+	key, value, _ = strings.Cut(env, "=")
+	if !strings.HasPrefix(key, prefix) {
+		return "", "", false
+	}
+	return key, value, true
+}
+
 func cleanKey(key, prefix string, cutoffPrefix bool) string {
 	if cutoffPrefix {
-		key = strings.TrimPrefix(key, prefix)
+		if trimmed, ok := strings.CutPrefix(key, prefix); ok {
+			return trimmed
+		}
 	}
 
 	return key

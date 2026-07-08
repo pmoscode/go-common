@@ -86,6 +86,23 @@ func TestPrettyPrintJsonSlice(t *testing.T) {
 	assert.Contains(t, result, "3")
 }
 
+// TestPrettyPrintJsonFallbackNoTrailingNewline is a regression test ensuring the
+// error-fallback path (triggered by a non-marshallable value like a channel)
+// does not have a trailing newline, consistent with the success path.
+func TestPrettyPrintJsonFallbackNoTrailingNewline(t *testing.T) {
+	result := PrettyPrintJson(make(chan int))
+	assert.NotEmpty(t, result)
+	assert.NotEqual(t, byte('\n'), result[len(result)-1], "fallback result should not have a trailing newline")
+}
+
+// TestPrettyPrintYamlFallbackNoTrailingNewline is the YAML equivalent of
+// TestPrettyPrintJsonFallbackNoTrailingNewline.
+func TestPrettyPrintYamlFallbackNoTrailingNewline(t *testing.T) {
+	result := PrettyPrintYaml(make(chan int))
+	assert.NotEmpty(t, result)
+	assert.NotEqual(t, byte('\n'), result[len(result)-1], "fallback result should not have a trailing newline")
+}
+
 func countRune(s string, r rune) int {
 	count := 0
 	for _, c := range s {

@@ -3,7 +3,6 @@ package cli
 // identity provide unified methods for the parse func.
 type identity interface {
 	getName() string
-	getEnv() string
 	loadEnvValue()
 }
 
@@ -37,15 +36,9 @@ func (p *Parameter[T]) getName() string {
 	return p.name
 }
 
-// getEnv return the parameters env name as part of the identity interface.
-func (p *Parameter[T]) getEnv() string {
-	return p.envVarName
-}
-
 // loadEnvValue fetches the environment variable as part of the identity interface.
 func (p *Parameter[T]) loadEnvValue() {
-	value := p.envGetFunc(p.envVarName, p.DefaultValue)
-	p.value = &value
+	*p.value = p.envGetFunc(p.envVarName, p.DefaultValue)
 }
 
 // NewParameter return a new parameter instance.

@@ -9,9 +9,12 @@ import (
 type Option func(options *pahoMqtt.ClientOptions)
 
 // WithBroker defines the host and port of the mqtt broker. (default port usually is 1883)
+//
+// Deprecated: Use [NewBrokerBuilder] instead, which additionally supports TLS,
+// authentication, and the ws(s):// protocols.
 func WithBroker(ip string, port int) Option {
 	return func(options *pahoMqtt.ClientOptions) {
-		options.AddBroker(fmt.Sprintf("tcp://%s:%d", ip, port))
+		options.AddBroker(fmt.Sprintf("%s%s:%d", MqttTcp, ip, port))
 	}
 }
 
