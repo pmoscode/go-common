@@ -5,7 +5,7 @@ tasks:
     desc: Update go version (latest patch) and go dependencies
     cmds:
       - go get go@latest
-      - go get -u ./...
+      - go get -u -t ./...
       - go mod tidy
 
   tidy:
