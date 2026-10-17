@@ -15,9 +15,9 @@ jobs:
     steps:
     - uses: actions/checkout@v7
 
-    - uses: pnorton5432/setup-task@v1
+    - uses: go-task/setup-task@v2
       with:
-        task-version: 3.48.0
+        version: 3.48.0
 
     - uses: actions/setup-go@v7
       with:

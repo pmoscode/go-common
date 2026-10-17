@@ -2,9 +2,11 @@ version: '3'
 
 tasks:
   upgrade:
-    desc: Update go dependencies
+    desc: Update go version (latest patch) and go dependencies
     cmds:
+      - go get go@latest
       - go get -u ./...
+      - go mod tidy
 
   tidy:
     desc: Run go mod tidy and verify clean state
