@@ -341,6 +341,8 @@ type mockClient struct {
 
 func (c *mockClient) AddRoute(topic string, callback mqtt.MessageHandler) {}
 
+func (c *mockClient) DeleteRoute(topic string) {}
+
 func (c *mockClient) IsConnected() bool {
 	return true
 }
